@@ -26,14 +26,17 @@
             --glow-cyan: 0 0 30px rgba(0, 240, 255, 0.3);
             --glow-green: 0 0 30px rgba(0, 255, 136, 0.3);
             --glow-purple: 0 0 30px rgba(168, 85, 247, 0.3);
-            /* 大屏投屏专用：放大所有尺寸 */
-            --font-body: clamp(1.05rem, 1.4vw, 1.3rem);
-            --font-body-sm: clamp(0.95rem, 1.2vw, 1.15rem);
-            --font-code: clamp(0.9rem, 1.2vw, 1.1rem);
-            --font-h1: clamp(3rem, 7vw, 5.5rem);
-            --font-h2: clamp(2.2rem, 5vw, 3.8rem);
-            --font-h3: clamp(1.4rem, 2.5vw, 2rem);
-            --font-h4: clamp(1.15rem, 1.8vw, 1.5rem);
+            /* 大屏投屏专用：放大所有尺寸，提高对比度 */
+            --font-body: clamp(1.2rem, 1.8vw, 1.5rem);
+            --font-body-sm: clamp(1.05rem, 1.4vw, 1.3rem);
+            --font-code: clamp(1.0rem, 1.4vw, 1.2rem);
+            --font-h1: clamp(3.5rem, 8vw, 6rem);
+            --font-h2: clamp(2.5rem, 6vw, 4rem);
+            --font-h3: clamp(1.8rem, 3vw, 2.5rem);
+            --font-h4: clamp(1.4rem, 2vw, 1.8rem);
+            --text-primary: #ffffff;
+            --text-secondary: #e2e8f0;
+            --text-dim: #94a3b8;
             --spacing-section: clamp(5rem, 8vh, 8rem);
             --spacing-card: clamp(2rem, 3vw, 3rem);
             --radius: 16px;
@@ -176,7 +179,6 @@
             align-items: center;
             text-align: center;
             padding-top: clamp(100px, 12vh, 140px);
-            padding-bottom: 4rem;
         }
 
         .hero-badge {
@@ -557,6 +559,11 @@
             font-size: clamp(0.85rem, 1.1vw, 1rem);
             color: var(--accent-cyan);
             border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th:first-child, .comparison-table td:first-child {
+            min-width: 220px;
+            font-weight: 600;
         }
 
         .comparison-table td {
@@ -1004,7 +1011,7 @@
             align-items: center;
             justify-content: center;
             flex-wrap: wrap;
-            gap: 0;
+            gap: clamp(0.5rem, 1vw, 1rem);
             margin: 2rem 0;
             padding: clamp(2rem, 4vw, 3rem);
             background: var(--bg-card);
@@ -1013,15 +1020,26 @@
         }
 
         .arch-node {
-            padding: clamp(1rem, 2vw, 1.5rem) clamp(1.5rem, 3vw, 2.5rem);
+            padding: clamp(0.8rem, 1.5vw, 1.2rem) clamp(1.2rem, 2vw, 1.8rem);
             border-radius: 12px;
             font-weight: 700;
-            font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+            font-size: clamp(0.8rem, 1vw, 1rem);
             text-align: center;
-            min-width: 140px;
+            min-width: 120px;
             transition: transform 0.3s, box-shadow 0.3s;
             cursor: default;
+            flex: 1;
+            min-width: fit-content;
         }
+
+        .arch-arrow {
+            font-size: clamp(1rem, 2vw, 1.5rem);
+            color: var(--text-dim);
+            margin: 0 clamp(0.3rem, 0.5vw, 0.5rem);
+            animation: arrowPulse 1.5s ease-in-out infinite;
+        }
+
+
 
         .arch-node:hover { transform: scale(1.05); }
         .arch-node .sub {
@@ -1129,6 +1147,13 @@
             .ghost-locks { grid-template-columns: 1fr; }
         }
 
+        @media (max-width: 1024px) {
+            .trae-intro { grid-template-columns: 1fr; }
+            .ghost-locks { grid-template-columns: 1fr; }
+            .comparison-table { font-size: 0.9rem; }
+            .comparison-table th, .comparison-table td { padding: 0.8rem 1rem; }
+        }
+
         @media (max-width: 768px) {
             .nav-links { display: none; }
             .gallery-grid { grid-template-columns: 1fr; }
@@ -1137,6 +1162,22 @@
             .step-explain::before { display: none; }
             .comparison-table { font-size: 0.8rem; }
             .comparison-table th, .comparison-table td { padding: 0.6rem 0.8rem; }
+            .comparison-table th:first-child, .comparison-table td:first-child {
+                min-width: 180px;
+                font-weight: 600;
+            }
+            .arch-flow {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .arch-node {
+                text-align: center;
+                margin: 0.5rem 0;
+            }
+            .arch-arrow {
+                transform: rotate(90deg);
+                margin: 0.5rem 0;
+            }
         }
     </style>
 </head>
@@ -1155,12 +1196,12 @@
         </a>
         <ul class="nav-links">
             <li><a href="#overview">概览</a></li>
+            <li><a href="#tools">工具链介绍</a></li>
+            <li><a href="#comparison">技术优势对比</a></li>
             <li><a href="#architecture">整体架构</a></li>
             <li><a href="#execution-flow">执行流程</a></li>
-            <li><a href="#trae">Trae 介绍</a></li>
-            <li><a href="#gallery">素材展示</a></li>
-            <li><a href="#code-stats">源码解析</a></li>
-            <li><a href="#ghost-locks">幽灵锁</a></li>
+            <li><a href="#code-stats">核心代码解析</a></li>
+            <li><a href="#ghost-locks">自动回复功能</a></li>
             <li><a href="#pitfalls">踩坑记录</a></li>
             <li><a href="#deploy">部署指南</a></li>
         </ul>
@@ -1183,31 +1224,177 @@
         <p class="hero-subtitle">
             利用 OpenCLI 的 Browser Bridge 插件 + Trae AI IDE，以 UI 自动化方式优雅、稳定地实现微信视频号数据全量抓取与数据库持久化，并突破性地实现基于评论关键字的自动回复功能。
         </p>
-        <div class="hero-cta">
-            <a href="#code-stats" class="btn btn-primary">
-                <span>⚡</span> 查看源码解析
-            </a>
-            <a href="#gallery" class="btn btn-outline">
-                <span>🖼</span> OpenCLI 素材展示
-            </a>
+
+
+    </section>
+
+    <!-- ===== TOOLS INTRODUCTION ===== -->
+    <section class="section" id="tools">
+        <div class="section-header fade-in">
+            <div class="section-tag">Tools</div>
+            <h2 class="section-title">颠覆传统的双核工具链</h2>
+            <div class="glow-line"></div>
+            <p class="section-desc">抛弃从零手写笨重的 Puppeteer 脚本，借助两个极具颠覆性的生产力工具</p>
         </div>
-        <div class="hero-stats">
-            <div class="hero-stat">
-                <div class="value">2</div>
-                <div class="label">核心脚本</div>
+
+        <div class="feature-grid fade-in">
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, var(--accent-cyan), var(--accent-green)); color: #000;">
+                    🖥️
+                </div>
+                <h3>OpenCLI</h3>
+                <p>把任何网站变成你的命令行工具。通过 Browser Bridge 插件直接接管日常使用的 Chrome 浏览器，完美复用登录态，100% 模拟真实人类行为，风控几率为 0。</p>
+                <div class="tech-badges">
+                    <span class="tech-badge badge-cyan">AI-Native</span>
+                    <span class="tech-badge badge-green">CLI</span>
+                    <span class="tech-badge badge-purple">CDP协议</span>
+                </div>
             </div>
-            <div class="hero-stat">
-                <div class="value">4</div>
-                <div class="label">抓取步骤</div>
+
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink)); color: #fff;">
+                    🧠
+                </div>
+                <h3>Trae AI IDE</h3>
+                <p>真正懂代码的智能 IDE。用自然语言描述需求，AI 自主生成完整代码，分析报错，规划任务步骤，甚至主动安装依赖并验证运行结果。</p>
+                <div class="tech-badges">
+                    <span class="tech-badge badge-purple">AI 驱动</span>
+                    <span class="tech-badge badge-pink">Self-Healing</span>
+                    <span class="tech-badge badge-orange">端到端验证</span>
+                </div>
             </div>
-            <div class="hero-stat">
-                <div class="value">3</div>
-                <div class="label">破解"幽灵锁"</div>
+        </div>
+    </section>
+
+    <!-- ===== GALLERY ===== -->
+    <section class="section" id="gallery">
+        <div class="section-header fade-in">
+            <div class="section-tag">Capabilities</div>
+            <h2 class="section-title">OpenCLI 核心能力展示</h2>
+            <div class="glow-line"></div>
+            <p class="section-desc">通过五张核心技术图，全面解析 OpenCLI 的核心能力、技术原理、快速上手和竞品对比</p>
+        </div>
+
+        <div class="gallery-grid">
+            <div class="gallery-card fade-in">
+                <div class="card-number">01</div>
+                <img src="OpenCLI1.jpg" alt="OpenCLI 一文讲透">
+                <div class="card-label">
+                    <h3>OpenCLI 一文讲透</h3>
+                    <p>把任何网站变成命令行 — 2天 1.8K Stars 的 AI 原生工具</p>
+                    <div class="tech-badges">
+                        <span class="tech-badge badge-cyan">AI-Native</span>
+                        <span class="tech-badge badge-green">CLI</span>
+                    </div>
+                </div>
             </div>
-            <div class="hero-stat">
-                <div class="value">0</div>
-                <div class="label">WebDriver 特征</div>
+
+            <div class="gallery-card fade-in">
+                <div class="card-number">02</div>
+                <img src="OpenCLI2.jpg" alt="原理：4步搞懂">
+                <div class="card-label">
+                    <h3>原理：4步搞懂</h3>
+                    <p>Chrome扩展 → 守护进程 → CDP协议 → 复用登录态，零配置的完整链路</p>
+                    <div class="tech-badges">
+                        <span class="tech-badge badge-purple">CDP协议</span>
+                        <span class="tech-badge badge-orange">Session复用</span>
+                    </div>
+                </div>
             </div>
+
+            <div class="gallery-card fade-in">
+                <div class="card-number">03</div>
+                <img src="OpenCLI3.jpg" alt="三大能力">
+                <div class="card-label">
+                    <h3>三大核心能力</h3>
+                    <p>网站→CLI (50+平台)、桌面应用→CLI、外部CLI统一管理</p>
+                    <div class="tech-badges">
+                        <span class="tech-badge badge-cyan">50+平台</span>
+                        <span class="tech-badge badge-pink">AI Agent</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gallery-card fade-in">
+                <div class="card-number">04</div>
+                <img src="OpenCLI4.jpg" alt="三步上手">
+                <div class="card-label">
+                    <h3>三步快速上手</h3>
+                    <p>npm install → opencli setup → opencli list，开箱即用</p>
+                    <div class="tech-badges">
+                        <span class="tech-badge badge-green">Node.js ≥ 20</span>
+                        <span class="tech-badge badge-cyan">Chrome</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gallery-card fade-in">
+                <div class="card-number">05</div>
+                <img src="OpenCLI5.jpg" alt="同类对比 & 局限">
+                <div class="card-label">
+                    <h3>同类对比 & 局限性</h3>
+                    <p>与 Browser-Use、Crawl4AI、Puppeteer 的场景对比，以及诚实的能力边界</p>
+                    <div class="tech-badges">
+                        <span class="tech-badge badge-orange">竞品对比</span>
+                        <span class="tech-badge badge-purple">确定性输出</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== COMPARISON TABLE ===== -->
+    <section class="section" id="comparison">
+        <div class="section-header fade-in">
+            <div class="section-tag">Comparison</div>
+            <h2 class="section-title">技术优势对比</h2>
+            <div class="glow-line"></div>
+            <p class="section-desc">三种技术流派的核心差异，Trae + OpenCLI 展现降维打击般的优势</p>
+        </div>
+
+        <div class="fade-in" style="overflow-x: auto;">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>核心痛点 / 评估维度</th>
+                        <th>传统 API 爬虫 (Python/Requests)</th>
+                        <th>传统无头浏览器 (Puppeteer/Selenium)</th>
+                        <th>Trae + OpenCLI (本次实战方案)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>登录态与验证码</strong></td>
+                        <td class="bad">❌ 极难。需抓包分析加密 Token，破解滑块/短信验证码，存活期短。</td>
+                        <td class="mid">⚠️ 困难。需编写复杂代码模拟输入，或使用第三方接码平台，易被指纹识别拦截。</td>
+                        <td class="good highlight-col">✅ 完美绕过。直接复用你日常使用的 Chrome 浏览器已登录的 Session，真正实现“所见即所得”。</td>
+                    </tr>
+                    <tr>
+                        <td><strong>反爬虫与风控对抗</strong></td>
+                        <td class="bad">❌ 极难。微信视频号等大厂接口参数加密极其复杂，频繁变动。</td>
+                        <td class="mid">⚠️ 中等。无头浏览器的 WebDriver 指纹极易被大厂识别，容易被封禁。</td>
+                        <td class="good highlight-col">✅ 降维打击。OpenCLI 的 Browser Bridge 插件完全基于真实用户的正常浏览器运行，没有任何 WebDriver 特征，100% 模拟真实人类行为，风控几率为 0。</td>
+                    </tr>
+                    <tr>
+                        <td><strong>环境搭建与迁移</strong></td>
+                        <td class="mid">⚠️ 中等。需要配置 Python 环境、安装各种依赖包。</td>
+                        <td class="bad">❌ 繁琐。需安装体积庞大的 Chromium 浏览器内核，常遇依赖缺失、版本不兼容等问题。</td>
+                        <td class="good highlight-col">✅ 极简。只需全局安装 npm 包，任意电脑一键 opencli register 即可复用，零内置浏览器体积负担。</td>
+                    </tr>
+                    <tr>
+                        <td><strong>开发效率与门槛</strong></td>
+                        <td class="bad">❌ 门槛高。需要极强的抓包、逆向解密能力和后端网络知识。</td>
+                        <td class="mid">⚠️ 门槛中。需熟练掌握繁琐的异步操作、DOM 节点等待和浏览器进程管理代码。</td>
+                        <td class="good highlight-col">✅ 极速。基于 OpenCLI 的声明式 cli() 模板，仅需编写核心 page.evaluate 逻辑；Trae 能直接看懂报错日志、自主查阅源码并修复代码，真正实现自然语言驱动开发。</td>
+                    </tr>
+                    <tr>
+                        <td><strong>数据导出与格式化</strong></td>
+                        <td class="mid">⚠️ 需手写。需引入 csv、json 或 pandas 库，手动编写文件读写代码。</td>
+                        <td class="mid">⚠️ 需手写。同上，需自行处理 I/O 逻辑。</td>
+                        <td class="good highlight-col">✅ 开箱即用。OpenCLI 框架底层自带格式化引擎，执行时只需加参数 -f json、-f csv、-f yaml，复杂嵌套数据一键导出。</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </section>
 
@@ -1247,12 +1434,7 @@
             </div>
         </div>
 
-        <div class="arch-flow fade-in" style="margin-top: 1.5rem;">
-            <div class="arch-node auto" style="flex: 1; max-width: 600px;">
-                🤖 自动回复链路<br>
-                <span class="sub">遍历评论 → 关键字匹配 → scrollIntoView → dispatchEvent → 原型链注入 → 发送</span>
-            </div>
-        </div>
+
     </section>
 
     <!-- ===== EXECUTION FLOW ===== -->
@@ -1326,232 +1508,7 @@
         </div>
     </section>
 
-    <!-- ===== TRAE INTRODUCTION ===== -->
-    <section class="section" id="trae">
-        <div class="section-header fade-in">
-            <div class="section-tag">Trae AI IDE</div>
-            <h2 class="section-title">真正懂代码的 AI 智能 IDE</h2>
-            <div class="glow-line"></div>
-            <p class="section-desc">在整个开发过程中，并没有离开编辑器去到处查阅文档或手动调试，因为有了 Trae</p>
-        </div>
 
-        <div class="trae-intro fade-in">
-            <div class="trae-text">
-                <h3>从"辅助补全"到"结对编程"</h3>
-                <p>
-                    传统的 IDE（如 VSCode 或 WebStorm）加上 Copilot 插件，主要是你在写代码时它帮你补全几行片段。而 <strong>Trae</strong> 是一个以 AI 为核心引擎的开发环境。
-                </p>
-                <p>
-                    你只需要用<strong>自然语言</strong>说出你的意图，例如：
-                </p>
-                <p style="color: var(--accent-cyan); font-style: italic; padding: 1rem 1.5rem; background: rgba(0, 240, 255, 0.05); border-radius: 10px; border-left: 3px solid var(--accent-cyan);">
-                    "我想抓取视频的封面和评论人的头像，完善一下，并存入 10.1.28.16 的 MySQL"
-                </p>
-                <p>
-                    Trae 就会<strong>自主阅读</strong>当前项目上下文、分析报错、规划任务步骤、编写完整的业务代码，甚至主动帮你运行终端命令安装缺失的 npm 依赖（如 <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.1rem 0.4rem; border-radius: 4px;">mysql2</code>）、编译文件并验证运行结果。
-                </p>
-            </div>
-            <div class="trae-highlight">
-                <h4>🧠 Trae 核心能力</h4>
-                <ul>
-                    <li>
-                        <span class="icon">🎯</span>
-                        <div><strong>自然语言驱动开发</strong> — 用中文描述需求，AI 自主生成完整代码</div>
-                    </li>
-                    <li>
-                        <span class="icon">🔍</span>
-                        <div><strong>全自动环境排错 (Self-Healing)</strong> — 直接阅读截图中的报错日志，主动排查源码并修复</div>
-                    </li>
-                    <li>
-                        <span class="icon">📦</span>
-                        <div><strong>智能依赖管理</strong> — 自动检测缺失依赖，在终端执行安装命令</div>
-                    </li>
-                    <li>
-                        <span class="icon">🚀</span>
-                        <div><strong>端到端验证</strong> — 编写代码后自动编译、运行并验证结果</div>
-                    </li>
-                    <li>
-                        <span class="icon">🌐</span>
-                        <div><strong>浏览器探索驱动开发</strong> — 控制浏览器打开页面，找到元素、测试点击效果，将逻辑固化为脚本</div>
-                    </li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="fade-in" style="margin-top: 3rem;">
-            <div class="trae-highlight" style="border-left-color: var(--accent-green);">
-                <h4 style="color: var(--accent-green);">💡 实战案例：Trae 自主排错</h4>
-                <p style="font-size: var(--font-body-sm); color: var(--text-secondary); line-height: 2;">
-                    当在新电脑上部署遇到 <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.1rem 0.4rem; border-radius: 4px;">error: unknown command 'channels'</code>，或者写入数据库时遇到 <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.1rem 0.4rem; border-radius: 4px;">TypeError: Unknown charset 'utf8mb3'</code> 的深层字符集崩溃时，Trae 能够通过直接阅读截图中的报错日志，主动在内置终端里执行命令去排查 OpenCLI 的底层源码（比如查看 <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.1rem 0.4rem; border-radius: 4px;">discovery.js</code> 了解动态加载机制），并迅速给出最专业的解决方案。
-                </p>
-            </div>
-        </div>
-    </section>
-
-    <!-- ===== GALLERY ===== -->
-    <section class="section" id="gallery">
-        <div class="section-header fade-in">
-            <div class="section-tag">Gallery</div>
-            <h2 class="section-title">OpenCLI 素材展示</h2>
-            <div class="glow-line"></div>
-            <p class="section-desc">五张核心素材图，全面展示 OpenCLI 的能力、原理、上手方式和竞品对比</p>
-        </div>
-
-        <div class="gallery-grid">
-            <div class="gallery-card fade-in">
-                <div class="card-number">01</div>
-                <img src="OpenCLI1.jpg" alt="OpenCLI 一文讲透">
-                <div class="card-label">
-                    <h3>OpenCLI 一文讲透</h3>
-                    <p>把任何网站变成命令行 — 2天 1.8K Stars 的 AI 原生工具</p>
-                    <div class="tech-badges">
-                        <span class="tech-badge badge-cyan">AI-Native</span>
-                        <span class="tech-badge badge-green">CLI</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="gallery-card fade-in">
-                <div class="card-number">02</div>
-                <img src="OpenCLI2.jpg" alt="原理：4步搞懂">
-                <div class="card-label">
-                    <h3>原理：4步搞懂</h3>
-                    <p>Chrome扩展 → 守护进程 → CDP协议 → 复用登录态，零配置的完整链路</p>
-                    <div class="tech-badges">
-                        <span class="tech-badge badge-purple">CDP协议</span>
-                        <span class="tech-badge badge-orange">Session复用</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="gallery-card fade-in">
-                <div class="card-number">03</div>
-                <img src="OpenCLI3.jpg" alt="三大能力">
-                <div class="card-label">
-                    <h3>三大核心能力</h3>
-                    <p>网站→CLI (50+平台)、桌面应用→CLI、外部CLI统一管理</p>
-                    <div class="tech-badges">
-                        <span class="tech-badge badge-cyan">50+平台</span>
-                        <span class="tech-badge badge-pink">AI Agent</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="gallery-card fade-in">
-                <div class="card-number">04</div>
-                <img src="OpenCLI4.jpg" alt="三步上手">
-                <div class="card-label">
-                    <h3>三步快速上手</h3>
-                    <p>npm install → opencli setup → opencli list，开箱即用</p>
-                    <div class="tech-badges">
-                        <span class="tech-badge badge-green">Node.js ≥ 20</span>
-                        <span class="tech-badge badge-cyan">Chrome</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="gallery-card fade-in">
-                <div class="card-number">05</div>
-                <img src="OpenCLI5.jpg" alt="同类对比 & 局限">
-                <div class="card-label">
-                    <h3>同类对比 & 局限性</h3>
-                    <p>与 Browser-Use、Crawl4AI、Puppeteer 的场景对比，以及诚实的能力边界</p>
-                    <div class="tech-badges">
-                        <span class="tech-badge badge-orange">竞品对比</span>
-                        <span class="tech-badge badge-purple">确定性输出</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ===== FEATURES ===== -->
-    <section class="section" id="features">
-        <div class="section-header fade-in">
-            <div class="section-tag">Why</div>
-            <h2 class="section-title">为什么选择 Trae + OpenCLI？</h2>
-            <div class="glow-line"></div>
-            <p class="section-desc">与传统方案相比，具备降维打击般的技术优势</p>
-        </div>
-
-        <div class="feature-grid fade-in">
-            <div class="feature-card">
-                <div class="feature-icon" style="background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.3);">🔐</div>
-                <h3>完美绕过登录态</h3>
-                <p>直接复用 Chrome 已登录的 Session，无需抓包分析加密 Token，无需破解验证码，真正实现"所见即所得"。</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon" style="background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3);">🛡️</div>
-                <h3>零风控风险</h3>
-                <p>Browser Bridge 完全基于真实浏览器运行，没有任何 WebDriver 特征，100% 模拟真实人类行为。</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3);">⚡</div>
-                <h3>极速开发</h3>
-                <p>基于声明式 <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.1rem 0.4rem; border-radius: 4px;">cli()</code> 模板，仅需编写核心 <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.1rem 0.4rem; border-radius: 4px;">page.evaluate</code> 逻辑。Trae AI 直接看懂报错、自主修复代码。</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon" style="background: rgba(251, 146, 60, 0.1); border: 1px solid rgba(251, 146, 60, 0.3);">📦</div>
-                <h3>开箱即用的数据导出</h3>
-                <p>内置格式化引擎，执行时加 <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.1rem 0.4rem; border-radius: 4px;">-f json</code>、<code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.1rem 0.4rem; border-radius: 4px;">-f csv</code>、<code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.1rem 0.4rem; border-radius: 4px;">-f yaml</code> 即可一键导出复杂嵌套数据。</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- ===== TECH COMPARISON TABLE ===== -->
-    <section class="section" id="comparison">
-        <div class="section-header fade-in">
-            <div class="section-tag">Comparison</div>
-            <h2 class="section-title">三大技术流派对比</h2>
-            <div class="glow-line"></div>
-            <p class="section-desc">从登录态、反爬、环境、开发效率、数据导出五个维度全面评估</p>
-        </div>
-
-        <div class="fade-in" style="overflow-x: auto;">
-            <table class="comparison-table">
-                <thead>
-                    <tr>
-                        <th style="min-width: 160px;">核心评估维度</th>
-                        <th style="min-width: 260px;">传统 API 爬虫<br><span class="dim" style="font-weight: 400;">Python / Requests</span></th>
-                        <th style="min-width: 260px;">传统无头浏览器<br><span class="dim" style="font-weight: 400;">Puppeteer / Selenium</span></th>
-                        <th style="min-width: 300px;" class="highlight-col">Trae + OpenCLI<br><span style="font-weight: 400;">本次实战方案 ✅</span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>登录态与验证码</strong></td>
-                        <td class="bad">❌ 极难 — 需抓包分析加密 Token，破解滑块/短信验证码，存活期短</td>
-                        <td class="mid">⚠️ 困难 — 需编写复杂代码模拟输入，易被指纹识别拦截</td>
-                        <td class="good">✅ 完美绕过 — 直接复用 Chrome 已登录 Session，所见即所得</td>
-                    </tr>
-                    <tr>
-                        <td><strong>反爬虫与风控</strong></td>
-                        <td class="bad">❌ 极难 — 微信等大厂接口参数加密极其复杂，频繁变动</td>
-                        <td class="mid">⚠️ 中等 — WebDriver 指纹极易被识别，容易被封禁</td>
-                        <td class="good">✅ 降维打击 — 基于真实浏览器运行，零 WebDriver 特征，风控几率为 0</td>
-                    </tr>
-                    <tr>
-                        <td><strong>环境搭建与迁移</strong></td>
-                        <td class="mid">⚠️ 中等 — 需配置 Python 环境、安装各种依赖包</td>
-                        <td class="bad">❌ 繁琐 — 需安装体积庞大的 Chromium 内核，常遇版本不兼容</td>
-                        <td class="good">✅ 极简 — 全局安装 npm 包，一键 opencli register 复用</td>
-                    </tr>
-                    <tr>
-                        <td><strong>开发效率与门槛</strong></td>
-                        <td class="bad">❌ 门槛高 — 需要极强的抓包、逆向解密能力</td>
-                        <td class="mid">⚠️ 门槛中 — 需熟练掌握繁琐的异步操作和浏览器进程管理</td>
-                        <td class="good">✅ 极速 — 声明式 cli() 模板 + Trae 自然语言驱动开发</td>
-                    </tr>
-                    <tr>
-                        <td><strong>数据导出与格式化</strong></td>
-                        <td class="mid">⚠️ 需手写 — 需引入 csv/json/pandas 库手动编写 I/O</td>
-                        <td class="mid">⚠️ 需手写 — 同上，需自行处理文件读写逻辑</td>
-                        <td class="good">✅ 开箱即用 — 加参数 -f json / -f csv / -f yaml 一键导出</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
 
     <!-- ===== CODE: channels-stats.ts ===== -->
     <section class="section" id="code-stats">
@@ -1904,65 +1861,50 @@
         </div>
     </section>
 
-    <!-- ===== GHOST LOCKS SUMMARY ===== -->
+    <!-- ===== AUTO REPLY FEATURE ===== -->
     <section class="section" id="ghost-locks">
         <div class="section-header fade-in">
-            <div class="section-tag">Deep Dive</div>
-            <h2 class="section-title">破解现代 SPA 三大"幽灵锁"</h2>
+            <div class="section-tag">Feature</div>
+            <h2 class="section-title">自动回复功能展示</h2>
             <div class="glow-line"></div>
-            <p class="section-desc">自动回复功能的实现过程中，遇到了 React/Vue 框架带来的三大核心挑战</p>
+            <p class="section-desc">基于评论关键字的全自动回复功能，突破 React/Vue 虚拟 DOM 与 iframe 原型链障碍</p>
         </div>
 
-        <div class="ghost-locks fade-in">
-            <div class="ghost-lock-card">
-                <div class="ghost-lock-header">
-                    <div class="ghost-lock-num" style="background: rgba(250, 204, 21, 0.15); border: 1px solid var(--accent-yellow); color: var(--accent-yellow);">①</div>
-                    <h4>点击失效</h4>
-                </div>
-                <div class="ghost-lock-body">
-                    <div class="problem">
-                        <div class="problem-label">⚠️ 问题</div>
-                        <p>React/Vue 虚拟 DOM 中，直接对包裹元素调用 <code>.click()</code> 经常因冒泡问题或元素不在视口内而被"吃掉"</p>
-                    </div>
-                    <div class="solution-label">✅ 破局</div>
-                    <div class="solution-text">
-                        先 <code>scrollIntoView()</code> 强行滚到视口中心，再使用 <code>dispatchEvent(new MouseEvent('click', { bubbles: true, view: iframe.contentWindow }))</code> 派发最真实的鼠标事件，加上 <code>.click()</code> 双重保险。
-                    </div>
-                </div>
-            </div>
+        <div class="fade-in" style="text-align: center; margin: 3rem 0;">
+            <img src="channels-auto_reply.JPG" alt="自动回复功能展示" style="max-width: 100%; height: auto; border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0, 240, 255, 0.15);">
+        </div>
 
-            <div class="ghost-lock-card">
-                <div class="ghost-lock-header">
-                    <div class="ghost-lock-num" style="background: rgba(0, 240, 255, 0.15); border: 1px solid var(--accent-cyan); color: var(--accent-cyan);">②</div>
-                    <h4>发送按钮永远置灰</h4>
+        <div class="feature-grid fade-in">
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple)); color: #fff;">
+                    🔍
                 </div>
-                <div class="ghost-lock-body">
-                    <div class="problem">
-                        <div class="problem-label">⚠️ 问题</div>
-                        <p>直接修改 <code>textarea.value</code> 不会触发 React 的 <code>onChange</code>，导致"发送"按钮依然处于 Disabled 状态</p>
-                    </div>
-                    <div class="solution-label">✅ 破局</div>
-                    <div class="solution-text">
-                        使用 JS 原型链获取 <code>HTMLTextAreaElement.prototype</code> 的原生 Setter，通过 <code>.call()</code> 注入值，然后立刻派发 <code>input</code> 事件，完美骗过 React 状态树。
-                    </div>
-                </div>
+                <h3>关键字匹配</h3>
+                <p>自动遍历视频评论，智能识别包含特定关键字的评论内容，实现精准触发回复</p>
             </div>
-
-            <div class="ghost-lock-card">
-                <div class="ghost-lock-header">
-                    <div class="ghost-lock-num" style="background: rgba(0, 255, 136, 0.15); border: 1px solid var(--accent-green); color: var(--accent-green);">③</div>
-                    <h4>跨 iframe 原型丢失</h4>
+            
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, var(--accent-cyan), var(--accent-green)); color: #000;">
+                    🖱️
                 </div>
-                <div class="ghost-lock-body">
-                    <div class="problem">
-                        <div class="problem-label">⚠️ 问题</div>
-                        <p>使用 <code>window.HTMLTextAreaElement.prototype</code> 无效，因为微信评论区嵌套在 <code>iframe</code> 中，主窗口和 iframe 的原型链是隔离的</p>
-                    </div>
-                    <div class="solution-label">✅ 破局</div>
-                    <div class="solution-text">
-                        精准获取 <code>iframe.contentWindow.HTMLTextAreaElement.prototype</code>，拿到属于该 iframe 上下文的底层 Setter，成功注入值并点亮发送按钮。
-                    </div>
+                <h3>智能点击</h3>
+                <p>突破 React 虚拟 DOM 限制，使用 scrollIntoView + dispatchEvent 实现可靠的点击操作</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, var(--accent-orange), var(--accent-yellow)); color: #000;">
+                    ⚙️
                 </div>
+                <h3>原型链注入</h3>
+                <p>通过 iframe.contentWindow 上下文的原生 Setter 注入值，完美绕过 React 状态锁</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan)); color: #000;">
+                    📤
+                </div>
+                <h3>自动发送</h3>
+                <p>智能检测发送按钮状态，确保回复内容成功发送，实现全自动化流程</p>
             </div>
         </div>
     </section>
