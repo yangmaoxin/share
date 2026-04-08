@@ -383,7 +383,57 @@
             </div>
         </div>
 
-        <!-- Slide 3: Comparison -->
+        <!-- Slide 3: Trae AI IDE Detailed -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="slide-title">Trae AI IDE 深度解析</h2>
+                <p class="slide-subtitle">从“辅助补全”到“结对编程”的革命性转变</p>
+                
+                <div class="tech-grid">
+                    <div class="tech-card">
+                        <h3>从“辅助补全”到“结对编程”</h3>
+                        <p>传统 IDE 加上 Copilot 插件主要是补全代码片段，而 Trae 是一个以 AI 为核心引擎的开发环境。你只需要用自然语言说出你的意图，Trae 就会自主阅读项目上下文、分析报错、规划任务步骤、编写完整业务代码，甚至主动安装依赖并验证运行结果。</p>
+                    </div>
+                    <div class="tech-card">
+                        <h3>全自动的环境排错能力</h3>
+                        <p>当遇到部署错误或数据库字符集崩溃时，Trae 能够直接阅读报错日志，主动执行命令排查底层源码，并迅速给出最专业的解决方案，如修改字符集为 utf8mb4、执行 ALTER DATABASE 强制转换字符集等。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: OpenCLI Core Capabilities -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="slide-title">OpenCLI 核心能力展示</h2>
+                <p class="slide-subtitle">通过五张核心技术图，全面解析 OpenCLI 的核心能力</p>
+                
+                <div class="tech-grid">
+                    <div class="tech-card">
+                        <h3>OpenCLI 一文讲透</h3>
+                        <p>把任何网站变成命令行 — 2天 1.8K Stars 的 AI 原生工具</p>
+                    </div>
+                    <div class="tech-card">
+                        <h3>原理：4步搞懂</h3>
+                        <p>Chrome扩展 → 守护进程 → CDP协议 → 复用登录态，零配置的完整链路</p>
+                    </div>
+                    <div class="tech-card">
+                        <h3>三大核心能力</h3>
+                        <p>网站→CLI (50+平台)、桌面应用→CLI、外部CLI统一管理</p>
+                    </div>
+                    <div class="tech-card">
+                        <h3>三步快速上手</h3>
+                        <p>npm install → opencli setup → opencli list，开箱即用</p>
+                    </div>
+                    <div class="tech-card">
+                        <h3>同类对比 & 局限</h3>
+                        <p>与 Browser-Use、Crawl4AI、Puppeteer 的场景对比，以及诚实的能力边界</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Comparison -->
         <div class="slide">
             <div class="slide-content">
                 <h2 class="slide-title">技术优势对比</h2>
@@ -434,95 +484,234 @@
             </div>
         </div>
 
-        <!-- Slide 4: Core Logic -->
+        <!-- Slide 6: OpenCLI Architecture & Strategy -->
         <div class="slide">
             <div class="slide-content">
-                <h2 class="slide-title">核心抓取逻辑</h2>
-                <p class="slide-subtitle">微信视频号后台数据抓取的关键步骤</p>
+                <h2 class="slide-title">OpenCLI 架构与策略</h2>
+                <p class="slide-subtitle">完整技术架构：指令管理 + 四大策略模式</p>
                 
                 <div class="steps">
                     <div class="step">
                         <div class="step-number">1</div>
                         <div class="step-content">
-                            <h4>穿透 iframe 抓取视频统计元数据</h4>
-                            <p>微信后台页面内容被深层嵌套在 iframe 中，需要获取 iframe.contentDocument，然后遍历 .post-feed-item 节点，提取标题、时间、封面、播放量、点赞等数据。</p>
+                            <h4>指令管理</h4>
+                            <p>自动注册发现：将 .js 或 .yaml 文件放入 clis/ 目录，OpenCLI 自动发现并注册指令。目录结构清晰，使用 opencli list 查看已注册指令。</p>
                         </div>
                     </div>
                     <div class="step">
                         <div class="step-number">2</div>
                         <div class="step-content">
-                            <h4>模拟点击抓取评论详情与头像</h4>
-                            <p>跳转到评论管理页，模拟真实用户的鼠标点击左侧视频列表项，等待右侧评论区加载完成后，提取评论人的头像和内容。</p>
+                            <h4>四大策略模式</h4>
+                            <p>Cookie 策略：复用浏览器 Cookie 发起 HTTP 请求；UI 策略：通过 Playwright 模拟浏览器操作；Intercept 策略：拦截浏览器网络请求；Public 策略：无需登录，直接请求公开接口。</p>
                         </div>
                     </div>
                     <div class="step">
                         <div class="step-number">3</div>
                         <div class="step-content">
-                            <h4>数据合并与智能入库</h4>
-                            <p>通过视频的 title 将两个步骤抓取到的数据进行合并映射，利用 mysql2 库将数据持久化，使用 ON DUPLICATE KEY UPDATE 实现增量更新。</p>
+                            <h4>架构流程图</h4>
+                            <p>用户终端 → OpenCLI Core → 策略模式选择 → Browser Bridge → 数据获取 → 数据处理 → 输出与持久化（JSON/CSV/MySQL）</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 5: Auto Reply -->
+        <!-- Slide 7: Execution Flow -->
         <div class="slide">
             <div class="slide-content">
-                <h2 class="slide-title">自动回复功能</h2>
-                <p class="slide-subtitle">基于评论关键字的全自动回复实现</p>
+                <h2 class="slide-title">执行流程</h2>
+                <p class="slide-subtitle">数据在每一步如何流转，从页面抓取到最终入库的完整数据流</p>
                 
                 <div class="steps">
                     <div class="step">
                         <div class="step-number">1</div>
                         <div class="step-content">
-                            <h4>破解“点击失效”</h4>
-                            <p>使用 scrollIntoView() 强行滚动到中心，并用 dispatchEvent(new MouseEvent('click', { bubbles: true })) 向底层 SVG 气泡图标派发最真实的鼠标事件。</p>
+                            <h4>页面导航</h4>
+                            <p>page.goto('https://channels.weixin.qq.com/platform/post/list') → settleMs: 5000 等待页面稳定 → setTimeout(4000) 等待 React 异步渲染完成</p>
                         </div>
                     </div>
                     <div class="step">
                         <div class="step-number">2</div>
                         <div class="step-content">
-                            <h4>突破 React 状态锁</h4>
-                            <p>使用 JavaScript 原型链获取原生 Setter 注入值，然后立刻派发 input 事件，完美骗过 React 状态树，点亮“发送”按钮。</p>
+                            <h4>穿透 iframe</h4>
+                            <p>iframe = document.querySelector("iframe") → doc = iframe.contentDocument → 遍历提取 title, time, cover, views, likes, comments_count 等数据</p>
                         </div>
                     </div>
                     <div class="step">
                         <div class="step-number">3</div>
                         <div class="step-content">
-                            <h4>跨 iframe 原型链</h4>
-                            <p>精准获取 iframe.contentWindow.HTMLTextAreaElement.prototype，拿到属于该 iframe 上下文的底层 Setter。</p>
+                            <h4>评论抓取</h4>
+                            <p>跳转评论管理页 → 遍历左侧视频列表 → videoEls[i].click() 模拟人工点击 → setTimeout(2000) 等待接口返回 → 提取 user, time, avatar, content</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>数据合并</h4>
+                            <p>finalResults = statsList.map(stat => { matched = commentsList.find(c => c.title === stat.title); return { ...stat, comments_list: matched?.comments }; })</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h4>MySQL 入库</h4>
+                            <p>mysql.createConnection({ host: '10.1.28.16', charset: 'utf8mb4' }) → INSERT INTO video_stats ... ON DUPLICATE KEY UPDATE → 清理旧评论并批量插入新评论</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Code Analysis - Data Scraping -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="slide-title">代码解析：数据抓取与持久化</h2>
+                <p class="slide-subtitle">channels-stats.ts — 视频统计 + 评论抓取 + MySQL 入库</p>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>CLI 命令注册与配置</h4>
+                            <p>使用 OpenCLI 的 cli() 声明式接口注册一个名为 channels stats 的命令。配置目标域名 channels.weixin.qq.com，使用 Strategy.UI 策略启用浏览器自动化。通过 args 定义 --limit 参数控制抓取视频数量，columns 声明输出表格的列字段。</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>穿透 iframe 抓取视频统计元数据</h4>
+                            <p>微信后台页面内容被深层嵌套在 iframe 中。首先通过 page.goto 跳转到视频管理列表页，并设置 settleMs: 5000 等待页面稳定。然后在 page.evaluate 内部获取 iframe.contentDocument，遍历 .post-feed-item 节点，提取每个视频的标题、时间、封面URL，以及通过 .data-item 数组提取播放量、点赞、评论数、分享数、转发数等统计指标。</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>模拟点击抓取评论详情与头像</h4>
+                            <p>跳转到评论管理页后，由于右侧评论区是动态刷新的，必须通过代码模拟真实用户的鼠标点击左侧视频列表项。每次点击后等待 2000ms 让接口返回评论数据并完成渲染，然后提取每条评论的用户名、时间、头像URL、评论内容。特别处理了纯表情包评论（img.alt 兜底）。</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>数据合并与 MySQL 持久化入库</h4>
+                            <p>在 Node.js 环境中通过视频 title 将两步抓取的数据进行合并映射。利用 mysql2 库连接数据库，创建 video_stats 和 video_comments 两张表。插入视频数据时使用 ON DUPLICATE KEY UPDATE 实现增量更新；插入评论前先 DELETE 清理旧评论再批量插入。数据库和所有字段均强制使用 utf8mb4 字符集以支持 Emoji。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Code Analysis - Auto Reply -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="slide-title">代码解析：自动回复功能</h2>
+                <p class="slide-subtitle">channels-auto_reply.ts — 破解 React/Vue SPA 三大"幽灵锁"</p>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>命令注册与页面导航</h4>
+                            <p>注册 channels auto_reply 命令，同样使用 Strategy.UI 策略。脚本首先跳转到评论管理页面 /platform/interaction/comment，等待页面完全加载后，进入 page.evaluate 开始遍历左侧视频列表，逐个点击加载右侧评论区。</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>破解"幽灵锁"：点击失效</h4>
+                            <p>微信评论区采用 React/Vue 虚拟 DOM，直接对包裹元素调用 .click() 经常因冒泡问题或元素不在视口内而被"吃掉"。解决方案：先调用 scrollIntoView() 强行滚动到视口中心，再使用 dispatchEvent(new MouseEvent('click', { bubbles: true })) 向底层 SVG 气泡图标派发最真实的鼠标事件，并加上 .click() 双重保险。</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>破解"幽灵锁"：发送按钮置灰</h4>
+                            <p>即使成功弹出回复框，直接修改 textarea.value 不会触发 React 的 onChange，导致"发送"按钮仍处于 Disabled 状态。解决方案：使用 JavaScript 原型链获取 HTMLTextAreaElement.prototype 的原生 value Setter，通过 .call() 注入值，然后立刻派发 input 事件，完美骗过 React 状态树。</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>破解"幽灵锁"：跨 iframe 原型丢失</h4>
+                            <p>即使使用 window.HTMLTextAreaElement.prototype 也无效，因为微信评论区嵌套在 iframe 中，主窗口和 iframe 的原型链是隔离的。解决方案：精准获取 iframe.contentWindow.HTMLTextAreaElement.prototype，拿到属于该 iframe 上下文的底层 Setter。</p>
                         </div>
                     </div>
                 </div>
                 
                 <div class="code-block">
-                    <pre><code>if (content.includes("意思")) {
-  // 1. 强行滚动并点击底层的回复小图标
-  const replyBtn = el.querySelector(".weui-icon-outlined-comment");
-  replyBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  await wait(500);
-  replyBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: iframe.contentWindow }));
-  
-  // 2. 突破 iframe 原型链与 React 状态锁，强制写入内容
-  const textarea = el.querySelector("textarea");
-  const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-    iframe.contentWindow.HTMLTextAreaElement.prototype, "value"
-  )?.set;
-  nativeInputValueSetter.call(textarea, "欢迎观看这个视频谢谢");
-  textarea.dispatchEvent(new Event("input", { bubbles: true }));
-  
-  // 3. 定位并点击“发送”按钮
-  const submitBtn = Array.from(el.querySelectorAll(".tag-wrap")).find(b => b.className.includes("primary"));
-  if (submitBtn && !submitBtn.className.includes("disabled")) {
-    submitBtn.click();
-  }
+                    <pre><code>// 关键：必须从 iframe.contentWindow 获取原型，而非主窗口 window
+const iframeWindow = iframe.contentWindow;
+const nativeSetter = Object.getOwnPropertyDescriptor(
+  iframeWindow.HTMLTextAreaElement.prototype, "value"
+)?.set;
+
+// ... 注入值并派发 input 事件后 ...
+await wait(800);
+
+// 定位"发送"按钮（包含 primary 类的 .tag-wrap）
+const submitBtn = Array.from(el.querySelectorAll(".tag-wrap"))
+  .find(b => b.className.includes("primary"));
+
+if (submitBtn && !submitBtn.className.includes("disabled")) {
+  submitBtn.click();
+  actionLogs.push({
+    video_title: videoTitle, user, comment: content,
+    status: '✅ 已回复'
+  });
 }</code></pre>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 6: Deployment -->
+        <!-- Slide 10: Auto Reply Feature -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="slide-title">自动回复功能展示</h2>
+                <p class="slide-subtitle">基于评论关键字的全自动回复功能，突破 React/Vue 虚拟 DOM 与 iframe 原型链障碍</p>
+                
+                <div class="tech-grid">
+                    <div class="tech-card">
+                        <h3>关键字匹配</h3>
+                        <p>自动遍历视频评论，智能识别包含特定关键字的评论内容，实现精准触发回复</p>
+                    </div>
+                    <div class="tech-card">
+                        <h3>智能点击</h3>
+                        <p>突破 React 虚拟 DOM 限制，使用 scrollIntoView + dispatchEvent 实现可靠的点击操作</p>
+                    </div>
+                    <div class="tech-card">
+                        <h3>原型链注入</h3>
+                        <p>通过 iframe.contentWindow 上下文的原生 Setter 注入值，完美绕过 React 状态锁</p>
+                    </div>
+                    <div class="tech-card">
+                        <h3>自动发送</h3>
+                        <p>智能检测发送按钮状态，确保回复内容成功发送，实现全自动化流程</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 11: Pitfalls -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="slide-title">踩坑记录</h2>
+                <p class="slide-subtitle">实战过程中遇到的两大核心问题及其解决方案</p>
+                
+                <div class="tech-grid">
+                    <div class="tech-card">
+                        <h3>坑 1：现代 SPA 页面的异步渲染延迟</h3>
+                        <p>脚本执行太快，经常报"未找到视频列表"的错误。微信后台使用 React 框架，DOM 节点通过异步接口返回后才挂载，单纯依赖 page.goto 的完成状态完全不够。</p>
+                        <p style="margin-top: 1rem; color: var(--accent-green); font-weight: 600;">解决方案：大幅延长硬等待时间 — settleMs: 5000（导航等待）+ setTimeout(4000)（渲染等待）+ 每次点击视频后 setTimeout(2000)（接口返回等待）</p>
+                    </div>
+                    <div class="tech-card">
+                        <h3>坑 2：数据库写入时的 Emoji 字符崩溃</h3>
+                        <p>用户微信昵称或评论中经常包含原生手机 Emoji（如 🍟、🍫 等四字节 Unicode 字符），写入 MySQL 时直接报 TypeError: Unknown charset 'utf8mb3' 或截断乱码。</p>
+                        <p style="margin-top: 1rem; color: var(--accent-green); font-weight: 600;">解决方案：① mysql2 连接 charset 严格指定为 'utf8mb4'；② 建表时所有字段强制 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci；③ 使用 ALTER DATABASE 强制覆盖老旧字符集</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 12: Deployment -->
         <div class="slide">
             <div class="slide-content">
                 <h2 class="slide-title">跨设备部署指南</h2>
@@ -553,7 +742,15 @@
                     <div class="step">
                         <div class="step-number">4</div>
                         <div class="step-content">
-                            <h4>执行抓取与自动回复</h4>
+                            <h4>安装 Chrome 扩展并登录</h4>
+                            <p>安装 opencli Browser Bridge 插件，在 Chrome 中扫码登录视频号后台</p>
+                            <p>opencli setup</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">▶</div>
+                        <div class="step-content">
+                            <h4>执行抓取 / 自动回复</h4>
                             <p>opencli channels stats --limit 20<br>opencli channels auto_reply --limit 20</p>
                         </div>
                     </div>
@@ -561,7 +758,7 @@
             </div>
         </div>
 
-        <!-- Slide 7: Conclusion -->
+        <!-- Slide 13: Conclusion -->
         <div class="slide">
             <div class="slide-content">
                 <h2 class="slide-title">总结与展望</h2>
