@@ -9,6 +9,7 @@
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
+            /* 深色主题（默认） */
             --bg-primary: #0a0e17;
             --bg-secondary: #111827;
             --bg-card: #1a2235;
@@ -19,8 +20,8 @@
             --accent-pink: #f472b6;
             --accent-orange: #fb923c;
             --accent-yellow: #facc15;
-            --text-primary: #f1f5f9;
-            --text-secondary: #cbd5e1;
+            --text-primary: #ffffff;
+            --text-secondary: #e2e8f0;
             --text-dim: #94a3b8;
             --border-color: #1e293b;
             --glow-cyan: 0 0 30px rgba(0, 240, 255, 0.3);
@@ -34,13 +35,62 @@
             --font-h2: clamp(2.5rem, 6vw, 4rem);
             --font-h3: clamp(1.8rem, 3vw, 2.5rem);
             --font-h4: clamp(1.4rem, 2vw, 1.8rem);
-            --text-primary: #ffffff;
-            --text-secondary: #e2e8f0;
-            --text-dim: #94a3b8;
             --spacing-section: clamp(5rem, 8vh, 8rem);
             --spacing-card: clamp(2rem, 3vw, 3rem);
             --radius: 16px;
         }
+
+        /* 浅色主题 */
+        body.light-theme {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-card: #f1f5f9;
+            --bg-code: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #334155;
+            --text-dim: #64748b;
+            --border-color: #e2e8f0;
+            --glow-cyan: 0 0 30px rgba(0, 240, 255, 0.2);
+            --glow-green: 0 0 30px rgba(0, 255, 136, 0.2);
+            --glow-purple: 0 0 30px rgba(168, 85, 247, 0.2);
+        }
+
+        /* 浅色主题下的导航栏 */
+        body.light-theme .nav {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(24px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* 浅色主题下的代码高亮 */
+        body.light-theme .code-block pre {
+            background: #f8fafc;
+            color: #334155;
+            border: 1px solid var(--border-color);
+        }
+
+        body.light-theme .code-block code {
+            color: #334155;
+        }
+
+        body.light-theme .kw { color: #dc2626; }
+        body.light-theme .fn { color: #7c3aed; }
+        body.light-theme .str { color: #0284c7; }
+        body.light-theme .cm { color: #64748b; font-style: italic; }
+        body.light-theme .num { color: #0ea5e9; }
+        body.light-theme .op { color: #dc2626; }
+        body.light-theme .type { color: #ea580c; }
+        body.light-theme .prop { color: #ea580c; }
+
+        body.light-theme .flow-data {
+            background: #f8fafc;
+            color: #334155;
+            border: 1px solid var(--border-color);
+        }
+
+        body.light-theme .flow-data .hl-key { color: #ea580c; }
+        body.light-theme .flow-data .hl-str { color: #0284c7; }
+        body.light-theme .flow-data .hl-num { color: #0ea5e9; }
 
         html { scroll-behavior: smooth; }
 
@@ -89,6 +139,31 @@
             10% { opacity: 0.8; }
             90% { opacity: 0.8; }
             100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+
+        /* ===== Dynamic Lines ===== */
+        .bg-lines {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .line {
+            position: absolute;
+            background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+            height: 1px;
+            opacity: 0.2;
+            animation: line-move linear infinite;
+        }
+
+        @keyframes line-move {
+            0% { transform: translateX(-100%); opacity: 0; }
+            10% { opacity: 0.2; }
+            90% { opacity: 0.2; }
+            100% { transform: translateX(100vw); opacity: 0; }
         }
 
         /* ===== Navigation ===== */
@@ -161,6 +236,15 @@
         }
 
         .nav-links a:hover::after { width: 100%; }
+
+.nav-links a.active {
+    color: var(--accent-cyan);
+    font-weight: 700;
+}
+
+.nav-links a.active::after {
+    width: 100%;
+}
 
         /* ===== Main Content — 全宽布局 ===== */
         .main-content {
@@ -1186,23 +1270,26 @@
 <!-- Background Effects -->
 <div class="bg-grid"></div>
 <div class="bg-particles" id="particles"></div>
+<div class="bg-lines" id="lines"></div>
 
 <!-- Navigation -->
 <nav class="nav">
     <div class="nav-inner">
-        <a href="#" class="nav-logo">
-            <div class="logo-icon">OC</div>
-            OpenCLI Lab
-        </a>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <button id="theme-toggle" style="background: transparent; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem 1rem; font-size: clamp(0.85rem, 1.1vw, 1.05rem); color: var(--text-secondary); cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🌙</span> 主题
+            </button>
+            <a href="#" class="nav-logo">
+                <div class="logo-icon">OC</div>
+                OpenCLI Lab
+            </a>
+        </div>
         <ul class="nav-links">
             <li><a href="#overview">概览</a></li>
-            <li><a href="#tools">工具链介绍</a></li>
-            <li><a href="#comparison">技术优势对比</a></li>
-            <li><a href="#architecture">整体架构</a></li>
-            <li><a href="#execution-flow">执行流程</a></li>
-            <li><a href="#code-stats">核心代码解析</a></li>
-            <li><a href="#ghost-locks">自动回复功能</a></li>
-            <li><a href="#pitfalls">踩坑记录</a></li>
+            <li><a href="#tools">工具链</a></li>
+            <li><a href="#gallery">核心能力</a></li>
+            <li><a href="#comparison">技术对比</a></li>
+            <li><a href="#code-stats">代码解析</a></li>
             <li><a href="#deploy">部署指南</a></li>
         </ul>
     </div>
@@ -1222,7 +1309,7 @@
             实战指南
         </h1>
         <p class="hero-subtitle">
-            利用 OpenCLI 的 Browser Bridge 插件 + Trae AI IDE，以 UI 自动化方式优雅、稳定地实现微信视频号数据全量抓取与数据库持久化，并突破性地实现基于评论关键字的自动回复功能。
+            利用 OpenCLI 的 Browser Bridge 插件 + Trae AI IDE，以命令行自动化方式优雅、稳定地实现微信视频号数据全量抓取与数据库持久化，并突破性地实现基于评论关键字的自动回复功能。
         </p>
 
 
@@ -1261,6 +1348,36 @@
                     <span class="tech-badge badge-purple">AI 驱动</span>
                     <span class="tech-badge badge-pink">Self-Healing</span>
                     <span class="tech-badge badge-orange">端到端验证</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== TRAE INTRODUCTION ===== -->
+    <section class="section" id="trae">
+        <div class="section-header fade-in">
+            <div class="section-tag">Trae AI IDE</div>
+            <h2 class="section-title">Trae：真正懂代码的 AI 智能 IDE</h2>
+            <div class="glow-line"></div>
+            <p class="section-desc">在整个开发过程中，我并没有离开编辑器去到处查阅文档或手动调试，因为有了 Trae</p>
+        </div>
+
+        <div class="trae-intro fade-in" style="display: grid; grid-template-columns: 1fr; gap: 2rem; max-width: 1000px; margin: 0 auto;">
+            <div class="trae-text">
+                <h3>Trae 与传统 IDE 有什么区别？</h3>
+                <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 2rem;">
+                        <h4 style="color: var(--accent-cyan); margin-bottom: 1rem; font-size: var(--font-h4);">从“辅助补全”到“结对编程”</h4>
+                        <p style="color: var(--text-secondary); line-height: 1.8;">
+                            传统的 IDE（如 VSCode 或 WebStorm）加上 Copilot 插件，主要是你在写代码时它帮你补全几行片段。而 Trae 是一个以 AI 为核心引擎的开发环境。你只需要用自然语言说出你的意图（例如：“我想抓取视频的封面和评论人的头像，完善一下，并存入 10.1.28.16 的 MySQL”），Trae 就会自主阅读当前项目上下文、分析报错、规划任务步骤、编写完整的业务代码，甚至主动帮你运行终端命令安装缺失的 npm 依赖（如 <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.15rem 0.5rem; border-radius: 5px; font-size: clamp(0.85rem, 1vw, 0.95rem); font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;">mysql2</code>）、编译文件并验证运行结果。
+                        </p>
+                    </div>
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 2rem;">
+                        <h4 style="color: var(--accent-green); margin-bottom: 1rem; font-size: var(--font-h4);">全自动的环境排错能力（Self-Healing）</h4>
+                        <p style="color: var(--text-secondary); line-height: 1.8;">
+                            当我们在新电脑上部署遇到 <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.15rem 0.5rem; border-radius: 5px; font-size: clamp(0.85rem, 1vw, 0.95rem); font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;">error: unknown command 'channels'</code>，或者写入数据库时遇到 <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.15rem 0.5rem; border-radius: 5px; font-size: clamp(0.85rem, 1vw, 0.95rem); font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;">TypeError: Unknown charset 'utf8mb3'</code> 的深层字符集崩溃时。如果是传统开发，你需要花大量时间去搜索引擎找原因；而 Trae 能够通过直接阅读你截图中的报错日志，主动在内置终端里执行命令去排查 OpenCLI 的底层源码（比如查看 <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.15rem 0.5rem; border-radius: 5px; font-size: clamp(0.85rem, 1vw, 0.95rem); font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;">discovery.js</code> 了解它的动态加载机制），并迅速给出最专业的解决方案：修改代码里的 <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.15rem 0.5rem; border-radius: 5px; font-size: clamp(0.85rem, 1vw, 0.95rem); font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;">charset</code> 为 <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.15rem 0.5rem; border-radius: 5px; font-size: clamp(0.85rem, 1vw, 0.95rem); font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;">utf8mb4</code>、执行 <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.15rem 0.5rem; border-radius: 5px; font-size: clamp(0.85rem, 1vw, 0.95rem); font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;">ALTER DATABASE</code> 强制转换字符集、调整页面 <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.15rem 0.5rem; border-radius: 5px; font-size: clamp(0.85rem, 1vw, 0.95rem); font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;">iframe</code> 的等待延时，并帮你修改代码重新验证。它不仅写代码，更包揽了诊断和修复。
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2049,6 +2166,76 @@ document.querySelectorAll('.nav-links a').forEach(link => {
         }
     });
 });
+
+// ===== Scroll spy for navigation =====
+(function() {
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.nav-links a');
+    
+    function updateActiveNav() {
+        let currentSection = '';
+        
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.offsetHeight;
+            if (window.scrollY >= sectionTop - 100) {
+                currentSection = section.getAttribute('id');
+            }
+        });
+        
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${currentSection}`) {
+                link.classList.add('active');
+            }
+        });
+    }
+    
+    window.addEventListener('scroll', updateActiveNav);
+    updateActiveNav(); // Initial call
+})();
+
+// ===== Theme toggle =====
+(function() {
+    const themeToggle = document.getElementById('theme-toggle');
+    const body = document.body;
+    
+    // 检查本地存储中的主题设置
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        body.classList.add('light-theme');
+        themeToggle.innerHTML = '<span>☀️</span> 主题';
+    }
+    
+    themeToggle.addEventListener('click', () => {
+        body.classList.toggle('light-theme');
+        
+        if (body.classList.contains('light-theme')) {
+            themeToggle.innerHTML = '<span>☀️</span> 主题';
+            localStorage.setItem('theme', 'light');
+        } else {
+            themeToggle.innerHTML = '<span>🌙</span> 主题';
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+})();
+
+// ===== Dynamic Lines =====
+(function() {
+    const container = document.getElementById('lines');
+    const lineCount = 15;
+    
+    for (let i = 0; i < lineCount; i++) {
+        const line = document.createElement('div');
+        line.className = 'line';
+        line.style.top = Math.random() * 100 + '%';
+        line.style.width = (Math.random() * 300 + 100) + 'px';
+        line.style.animationDuration = (Math.random() * 10 + 10) + 's';
+        line.style.animationDelay = (Math.random() * 5) + 's';
+        line.style.opacity = Math.random() * 0.3 + 0.1;
+        container.appendChild(line);
+    }
+})();
 </script>
 
 </body>
