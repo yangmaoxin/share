@@ -1515,19 +1515,97 @@
         </div>
     </section>
 
-    <!-- ===== ARCHITECTURE OVERVIEW ===== -->
+    <!-- ===== OPENCLI ARCHITECTURE ===== -->
     <section class="section" id="architecture">
         <div class="section-header fade-in">
             <div class="section-tag">Architecture</div>
-            <h2 class="section-title">整体架构</h2>
+            <h2 class="section-title">OpenCLI 架构与策略</h2>
             <div class="glow-line"></div>
-            <p class="section-desc">从 CLI 命令到数据库持久化，五大模块协同工作的完整链路</p>
+            <p class="section-desc">OpenCLI 完整技术架构：指令管理 + 四大策略模式，从 CLI 命令到数据持久化的完整链路</p>
         </div>
 
+        <!-- 指令管理 -->
+        <div class="fade-in" style="margin-bottom: 4rem;">
+            <h3 style="text-align: center; margin-bottom: 2rem; color: var(--accent-cyan); font-size: 1.8rem;">📦 指令管理</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; max-width: 1200px; margin: 0 auto;">
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 2rem; transition: all 0.3s;">
+                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">🔌</div>
+                    <h4 style="color: var(--accent-cyan); margin-bottom: 0.8rem;">自动注册发现</h4>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">将 .js 或 .yaml 文件放入 clis/ 目录，OpenCLI 自动发现并注册指令，无需手动配置。目录名即为站点名，文件名即为指令名。</p>
+                </div>
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 2rem; transition: all 0.3s;">
+                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">📂</div>
+                    <h4 style="color: var(--accent-green); margin-bottom: 0.8rem;">目录结构</h4>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.9rem;">~/.opencli/clis/</code>
+                        <br>- channels/stats.js
+                        <br>- channels/comments.js
+                    </p>
+                </div>
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 2rem; transition: all 0.3s;">
+                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">🔍</div>
+                    <h4 style="color: var(--accent-purple); margin-bottom: 0.8rem;">指令验证</h4>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">使用 <code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.9rem;">opencli list</code> 查看已注册指令，<code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.9rem;">opencli &lt;site&gt; &lt;cmd&gt; --help</code> 查看使用说明。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 四大策略模式 -->
+        <div class="fade-in" style="margin-bottom: 4rem;">
+            <h3 style="text-align: center; margin-bottom: 2rem; color: var(--accent-purple); font-size: 1.8rem;">🎯 四大策略模式</h3>
+            <table class="comparison-table" style="max-width: 1200px; margin: 0 auto;">
+                <thead>
+                    <tr>
+                        <th style="min-width: 120px;">策略</th>
+                        <th style="min-width: 200px;">枚举值</th>
+                        <th>原理</th>
+                        <th>适用场景</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span style="display: inline-block; padding: 4px 12px; border-radius: 6px; background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); color: var(--accent-cyan); font-weight: 600;">Cookie</span></td>
+                        <td><code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.9rem;">Strategy.COOKIE</code></td>
+                        <td>复用浏览器 Cookie 发起 HTTP 请求，无需浏览器操作</td>
+                        <td>需要登录的 API 数据获取，效率高，加载快</td>
+                    </tr>
+                    <tr>
+                        <td><span style="display: inline-block; padding: 4px 12px; border-radius: 6px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: var(--accent-purple); font-weight: 600;">UI</span></td>
+                        <td><code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.9rem;">Strategy.UI</code></td>
+                        <td>通过 Playwright 模拟浏览器操作，所见即所得</td>
+                        <td>复杂交互：点击、输入、滚动、表单填写等</td>
+                    </tr>
+                    <tr>
+                        <td><span style="display: inline-block; padding: 4px 12px; border-radius: 6px; background: rgba(244, 114, 182, 0.1); border: 1px solid rgba(244, 114, 182, 0.3); color: var(--accent-pink); font-weight: 600;">Intercept</span></td>
+                        <td><code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.9rem;">Strategy.INTERCEPT</code></td>
+                        <td>拦截浏览器网络请求，直接获取 API 响应数据</td>
+                        <td>SPA 应用、Pinia/Vuex Store 数据、AJAX 请求</td>
+                    </tr>
+                    <tr>
+                        <td><span style="display: inline-block; padding: 4px 12px; border-radius: 6px; background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.3); color: var(--accent-green); font-weight: 600;">Public</span></td>
+                        <td><code style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.9rem;">Strategy.PUBLIC</code></td>
+                        <td>无需登录，直接请求公开接口</td>
+                        <td>公开数据、搜索结果、新闻资讯等无需登录的场景</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 架构流程图 -->
         <div class="arch-flow fade-in">
             <div class="arch-node cli">
-                🖥️ OpenCLI<br>
-                <span class="sub">CLI 框架 + 注册命令</span>
+                🖥️ 用户终端<br>
+                <span class="sub">opencli channels stats</span>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-node" style="background: linear-gradient(135deg, #6366f1, #818cf8); color: #fff;">
+                📦 OpenCLI Core<br>
+                <span class="sub">指令解析 · 调度 · 参数校验</span>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-node" style="background: linear-gradient(135deg, #10b981, #34d399); color: #0f172a;">
+                🎨 策略模式选择<br>
+                <span class="sub">Cookie / UI / Intercept / Public</span>
             </div>
             <div class="arch-arrow">→</div>
             <div class="arch-node browser">
@@ -1536,21 +1614,20 @@
             </div>
             <div class="arch-arrow">→</div>
             <div class="arch-node data">
-                📊 UI 自动化<br>
-                <span class="sub">page.evaluate + 模拟点击</span>
+                📊 数据获取<br>
+                <span class="sub">API / DOM / 网络拦截</span>
             </div>
             <div class="arch-arrow">→</div>
             <div class="arch-node merge">
-                🔗 数据合并<br>
-                <span class="sub">视频统计 + 评论列表映射</span>
+                🔗 数据处理<br>
+                <span class="sub">格式化 · 合并 · 验证</span>
             </div>
             <div class="arch-arrow">→</div>
             <div class="arch-node db">
-                🗄️ MySQL<br>
-                <span class="sub">utf8mb4 持久化入库</span>
+                🗄️ 输出与持久化<br>
+                <span class="sub">JSON / CSV / MySQL</span>
             </div>
         </div>
-
 
     </section>
 

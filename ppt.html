@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信视频号数据抓取与持久化实战指南</title>
+    <style>
+        /* ===== CSS Reset & Base ===== */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2235;
+            --bg-code: #0d1117;
+            --accent-cyan: #00f0ff;
+            --accent-green: #00ff88;
+            --accent-purple: #a855f7;
+            --accent-pink: #f472b6;
+            --accent-orange: #fb923c;
+            --accent-yellow: #facc15;
+            --text-primary: #ffffff;
+            --text-secondary: #e2e8f0;
+            --text-dim: #94a3b8;
+            --border-color: #1e293b;
+            --glow-cyan: 0 0 30px rgba(0, 240, 255, 0.3);
+            --glow-green: 0 0 30px rgba(0, 255, 136, 0.3);
+            --glow-purple: 0 0 30px rgba(168, 85, 247, 0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+
+        /* ===== Animated Background ===== */
+        .bg-grid {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+            background-size: 80px 80px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .bg-particles {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px; height: 3px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            animation: float-particle linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes float-particle {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.8; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+
+        .bg-lines {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .line {
+            position: absolute;
+            background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+            height: 1px;
+            opacity: 0.2;
+            animation: line-move linear infinite;
+        }
+
+        @keyframes line-move {
+            0% { transform: translateX(-100%); opacity: 0; }
+            10% { opacity: 0.2; }
+            90% { opacity: 0.2; }
+            100% { transform: translateX(100vw); opacity: 0; }
+        }
+
+        /* ===== Slides ===== */
+        .slides {
+            position: relative;
+            z-index: 1;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0 10%;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.8s ease;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .slide.next {
+            transform: translateX(100%);
+        }
+
+        .slide.prev {
+            transform: translateX(-100%);
+        }
+
+        /* ===== Slide Content ===== */
+        .slide-content {
+            max-width: 1200px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .slide-title {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 50%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .slide-subtitle {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+        }
+
+        .slide-text {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+
+        /* ===== Tech Cards ===== */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .tech-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: left;
+            transition: all 0.3s;
+        }
+
+        .tech-card:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+            transform: translateY(-5px);
+        }
+
+        .tech-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 1rem;
+        }
+
+        .tech-card p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ===== Comparison Table ===== */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            font-size: 0.9rem;
+        }
+
+        .comparison-table th {
+            background: rgba(0, 240, 255, 0.05);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .comparison-table tr:hover {
+            background: rgba(0, 240, 255, 0.02);
+        }
+
+        /* ===== Code Block ===== */
+        .code-block {
+            background: var(--bg-code);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            overflow-x: auto;
+            font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #e6edf3;
+        }
+
+        /* ===== Steps ===== */
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin: 2rem 0;
+            text-align: left;
+        }
+
+        .step {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(0, 240, 255, 0.1);
+            border: 2px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content h4 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-content p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ===== Controls ===== */
+        .controls {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 100;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+            transform: translateY(-3px);
+        }
+
+        /* ===== Progress Bar ===== */
+        .progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            z-index: 1000;
+            transition: width 0.3s ease;
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .slide-title {
+                font-size: 2.5rem;
+            }
+            
+            .slide-subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .tech-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Effects -->
+    <div class="bg-grid"></div>
+    <div class="bg-particles" id="particles"></div>
+    <div class="bg-lines" id="lines"></div>
+
+    <!-- Progress Bar -->
+    <div class="progress" id="progress"></div>
+
+    <!-- Slides -->
+    <div class="slides" id="slides">
+        <!-- Slide 1: Title -->
+        <div class="slide active">
+            <div class="slide-content">
+                <h1 class="slide-title">微信视频号<br>数据抓取与持久化</h1>
+                <p class="slide-subtitle">OpenCLI × Trae 协同开发实战指南</p>
+                <p class="slide-text">利用 OpenCLI 的 Browser Bridge 插件 + Trae AI IDE，以命令行自动化方式优雅、稳定地实现微信视频号数据全量抓取与数据库持久化，并突破性地实现基于评论关键字的自动回复功能。</p>
+            </div>
+        </div>
+
+        <!-- Slide 2: Tools Introduction -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="slide-title">颠覆传统的双核工具链</h2>
+                <p class="slide-subtitle">抛弃从零手写笨重的 Puppeteer 脚本，借助两个极具颠覆性的生产力工具</p>
+                
+                <div class="tech-grid">
+                    <div class="tech-card">
+                        <h3>OpenCLI</h3>
+                        <p>把任何网站变成你的命令行工具。通过 Browser Bridge 插件直接接管日常使用的 Chrome 浏览器，完美复用登录态，100% 模拟真实人类行为，风控几率为 0。</p>
+                    </div>
+                    <div class="tech-card">
+                        <h3>Trae AI IDE</h3>
+                        <p>真正懂代码的智能 IDE。用自然语言描述需求，AI 自主生成完整代码，分析报错，规划任务步骤，甚至主动安装依赖并验证运行结果。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Comparison -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="slide-title">技术优势对比</h2>
+                <p class="slide-subtitle">三种技术流派的核心差异</p>
+                
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>核心痛点 / 评估维度</th>
+                            <th>传统 API 爬虫</th>
+                            <th>传统无头浏览器</th>
+                            <th>Trae + OpenCLI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>登录态与验证码</td>
+                            <td>❌ 极难</td>
+                            <td>⚠️ 困难</td>
+                            <td>✅ 完美绕过</td>
+                        </tr>
+                        <tr>
+                            <td>反爬虫与风控对抗</td>
+                            <td>❌ 极难</td>
+                            <td>⚠️ 中等</td>
+                            <td>✅ 降维打击</td>
+                        </tr>
+                        <tr>
+                            <td>环境搭建与迁移</td>
+                            <td>⚠️ 中等</td>
+                            <td>❌ 繁琐</td>
+                            <td>✅ 极简</td>
+                        </tr>
+                        <tr>
+                            <td>开发效率与门槛</td>
+                            <td>❌ 门槛高</td>
+                            <td>⚠️ 门槛中</td>
+                            <td>✅ 极速</td>
+                        </tr>
+                        <tr>
+                            <td>数据导出与格式化</td>
+                            <td>⚠️ 需手写</td>
+                            <td>⚠️ 需手写</td>
+                            <td>✅ 开箱即用</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Slide 4: Core Logic -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="slide-title">核心抓取逻辑</h2>
+                <p class="slide-subtitle">微信视频号后台数据抓取的关键步骤</p>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>穿透 iframe 抓取视频统计元数据</h4>
+                            <p>微信后台页面内容被深层嵌套在 iframe 中，需要获取 iframe.contentDocument，然后遍历 .post-feed-item 节点，提取标题、时间、封面、播放量、点赞等数据。</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>模拟点击抓取评论详情与头像</h4>
+                            <p>跳转到评论管理页，模拟真实用户的鼠标点击左侧视频列表项，等待右侧评论区加载完成后，提取评论人的头像和内容。</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>数据合并与智能入库</h4>
+                            <p>通过视频的 title 将两个步骤抓取到的数据进行合并映射，利用 mysql2 库将数据持久化，使用 ON DUPLICATE KEY UPDATE 实现增量更新。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Auto Reply -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="slide-title">自动回复功能</h2>
+                <p class="slide-subtitle">基于评论关键字的全自动回复实现</p>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>破解“点击失效”</h4>
+                            <p>使用 scrollIntoView() 强行滚动到中心，并用 dispatchEvent(new MouseEvent('click', { bubbles: true })) 向底层 SVG 气泡图标派发最真实的鼠标事件。</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>突破 React 状态锁</h4>
+                            <p>使用 JavaScript 原型链获取原生 Setter 注入值，然后立刻派发 input 事件，完美骗过 React 状态树，点亮“发送”按钮。</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>跨 iframe 原型链</h4>
+                            <p>精准获取 iframe.contentWindow.HTMLTextAreaElement.prototype，拿到属于该 iframe 上下文的底层 Setter。</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="code-block">
+                    <pre><code>if (content.includes("意思")) {
+  // 1. 强行滚动并点击底层的回复小图标
+  const replyBtn = el.querySelector(".weui-icon-outlined-comment");
+  replyBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  await wait(500);
+  replyBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: iframe.contentWindow }));
+  
+  // 2. 突破 iframe 原型链与 React 状态锁，强制写入内容
+  const textarea = el.querySelector("textarea");
+  const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+    iframe.contentWindow.HTMLTextAreaElement.prototype, "value"
+  )?.set;
+  nativeInputValueSetter.call(textarea, "欢迎观看这个视频谢谢");
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  
+  // 3. 定位并点击“发送”按钮
+  const submitBtn = Array.from(el.querySelectorAll(".tag-wrap")).find(b => b.className.includes("primary"));
+  if (submitBtn && !submitBtn.className.includes("disabled")) {
+    submitBtn.click();
+  }
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Deployment -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="slide-title">跨设备部署指南</h2>
+                <p class="slide-subtitle">通过 OpenCLI 轻松将方案迁移到任何电脑上运行</p>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>全局安装 OpenCLI</h4>
+                            <p>npm install -g @jackwener/opencli</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>安装数据库驱动</h4>
+                            <p>cd ~/.opencli && npm install mysql2</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>注册脚本命令</h4>
+                            <p>opencli register /路径/到/你的/channels-stats.ts</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>执行抓取与自动回复</h4>
+                            <p>opencli channels stats --limit 20<br>opencli channels auto_reply --limit 20</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Conclusion -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="slide-title">总结与展望</h2>
+                <p class="slide-subtitle">OpenCLI + Trae 带来的革命性变化</p>
+                
+                <div class="tech-grid">
+                    <div class="tech-card">
+                        <h3>核心优势</h3>
+                        <p>完美绕过登录态与验证码，100% 模拟真实人类行为，极大降低风控风险，实现所见即所得的 UI 自动化。</p>
+                    </div>
+                    <div class="tech-card">
+                        <h3>开发效率</h3>
+                        <p>基于 OpenCLI 的声明式接口和 Trae 的 AI 辅助开发，大幅降低开发门槛，提高开发效率。</p>
+                    </div>
+                    <div class="tech-card">
+                        <h3>未来展望</h3>
+                        <p>可扩展到更多平台的数据抓取，实现更复杂的自动化任务，如批量处理、定时执行等。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="control-btn" id="prev">‹</button>
+        <button class="control-btn" id="next">›</button>
+    </div>
+
+    <script>
+        // ===== Particle Background =====
+        (function() {
+            const container = document.getElementById('particles');
+            const count = 40;
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.animationDuration = (Math.random() * 15 + 10) + 's';
+                p.style.animationDelay = (Math.random() * 10) + 's';
+                p.style.width = p.style.height = (Math.random() * 3 + 1) + 'px';
+                const colors = ['#00f0ff', '#00ff88', '#a855f7', '#f472b6'];
+                p.style.background = colors[Math.floor(Math.random() * colors.length)];
+                container.appendChild(p);
+            }
+        })();
+
+        // ===== Dynamic Lines =====
+        (function() {
+            const container = document.getElementById('lines');
+            const lineCount = 15;
+            
+            for (let i = 0; i < lineCount; i++) {
+                const line = document.createElement('div');
+                line.className = 'line';
+                line.style.top = Math.random() * 100 + '%';
+                line.style.width = (Math.random() * 300 + 100) + 'px';
+                line.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                line.style.animationDelay = (Math.random() * 5) + 's';
+                line.style.opacity = Math.random() * 0.3 + 0.1;
+                container.appendChild(line);
+            }
+        })();
+
+        // ===== Slide Navigation =====
+        (function() {
+            const slides = document.querySelectorAll('.slide');
+            const prevBtn = document.getElementById('prev');
+            const nextBtn = document.getElementById('next');
+            const progress = document.getElementById('progress');
+            let currentIndex = 0;
+            
+            function updateSlides() {
+                slides.forEach((slide, index) => {
+                    if (index === currentIndex) {
+                        slide.classList.add('active');
+                        slide.classList.remove('prev', 'next');
+                    } else if (index < currentIndex) {
+                        slide.classList.add('prev');
+                        slide.classList.remove('active', 'next');
+                    } else {
+                        slide.classList.add('next');
+                        slide.classList.remove('active', 'prev');
+                    }
+                });
+                
+                // Update progress bar
+                progress.style.width = ((currentIndex + 1) / slides.length) * 100 + '%';
+            }
+            
+            prevBtn.addEventListener('click', () => {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    updateSlides();
+                }
+            });
+            
+            nextBtn.addEventListener('click', () => {
+                if (currentIndex < slides.length - 1) {
+                    currentIndex++;
+                    updateSlides();
+                }
+            });
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft') {
+                    if (currentIndex > 0) {
+                        currentIndex--;
+                        updateSlides();
+                    }
+                } else if (e.key === 'ArrowRight') {
+                    if (currentIndex < slides.length - 1) {
+                        currentIndex++;
+                        updateSlides();
+                    }
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
