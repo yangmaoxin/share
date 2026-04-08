@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>代码可视化分析 - 微信视频号数据抓取</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --bg-card: #1e293b;
+    --bg-card-hover: #334155;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent2: #818cf8;
+    --accent3: #34d399;
+    --accent4: #fb923c;
+    --accent5: #f472b6;
+    --border: #334155;
+    --code-bg: #0d1117;
+    --radius: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ===== 背景粒子 ===== */
+  .bg-particles {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0; overflow: hidden;
+  }
+  .bg-particles span {
+    position: absolute;
+    width: 4px; height: 4px;
+    background: var(--accent);
+    border-radius: 50%;
+    opacity: 0;
+    animation: floatUp linear infinite;
+  }
+  @keyframes floatUp {
+    0% { opacity: 0; transform: translateY(100vh) scale(0); }
+    10% { opacity: 0.6; }
+    90% { opacity: 0.1; }
+    100% { opacity: 0; transform: translateY(-10vh) scale(1); }
+  }
+
+  .container {
+    position: relative; z-index: 1;
+    max-width: 1200px; margin: 0 auto; padding: 40px 24px 80px;
+  }
+
+  /* ===== Hero ===== */
+  .hero {
+    text-align: center; padding: 60px 0 40px;
+  }
+  .hero-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #0f172a; font-weight: 700; font-size: 13px;
+    padding: 6px 16px; border-radius: 20px;
+    margin-bottom: 20px; letter-spacing: 1px;
+  }
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 800;
+    background: linear-gradient(135deg, #e2e8f0, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+  .hero p {
+    color: var(--text-muted); font-size: 17px; max-width: 600px; margin: 0 auto;
+  }
+
+  /* ===== 概览卡片 ===== */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px; margin: 40px 0;
+  }
+  .overview-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    transition: all 0.3s ease;
+    position: relative; overflow: hidden;
+  }
+  .overview-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+  .overview-card:hover::before { transform: scaleX(1); }
+  .overview-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .overview-card .icon { font-size: 28px; margin-bottom: 12px; }
+  .overview-card h3 { font-size: 15px; color: var(--accent); margin-bottom: 6px; }
+  .overview-card p { font-size: 13px; color: var(--text-muted); }
+
+  /* ===== Section 标题 ===== */
+  .section-title {
+    font-size: 28px; font-weight: 700;
+    margin: 60px 0 24px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-title .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #0f172a; font-weight: 800; font-size: 18px;
+    border-radius: 10px; flex-shrink: 0;
+  }
+
+  /* ===== 架构图 ===== */
+  .arch-flow {
+    display: flex; align-items: center; justify-content: center;
+    flex-wrap: wrap; gap: 0; margin: 20px 0;
+    padding: 32px; background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .arch-node {
+    padding: 16px 24px; border-radius: 10px;
+    font-weight: 600; font-size: 14px;
+    text-align: center; min-width: 140px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: default;
+  }
+  .arch-node:hover { transform: scale(1.05); }
+  .arch-node.cli { background: linear-gradient(135deg, #6366f1, #818cf8); color: #fff; }
+  .arch-node.browser { background: linear-gradient(135deg, #0ea5e9, #38bdf8); color: #0f172a; }
+  .arch-node.data { background: linear-gradient(135deg, #10b981, #34d399); color: #0f172a; }
+  .arch-node.merge { background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #0f172a; }
+  .arch-node.db { background: linear-gradient(135deg, #ef4444, #f87171); color: #fff; }
+  .arch-node .sub { font-size: 11px; font-weight: 400; opacity: 0.85; margin-top: 4px; }
+  .arch-arrow {
+    font-size: 24px; color: var(--text-muted);
+    margin: 0 8px; animation: arrowPulse 1.5s ease-in-out infinite;
+  }
+  @keyframes arrowPulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  /* ===== 步骤卡片 ===== */
+  .step-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .step-card:hover { border-color: var(--accent); }
+  .step-header {
+    display: flex; align-items: center; gap: 16px;
+    padding: 20px 24px; cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+  }
+  .step-header:hover { background: var(--bg-card-hover); }
+  .step-num {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 15px; flex-shrink: 0;
+  }
+  .step-num.s1 { background: #6366f1; color: #fff; }
+  .step-num.s2 { background: #0ea5e9; color: #0f172a; }
+  .step-num.s3 { background: #10b981; color: #0f172a; }
+  .step-num.s4 { background: #f59e0b; color: #0f172a; }
+  .step-num.s5 { background: #ef4444; color: #fff; }
+  .step-header h3 { font-size: 16px; flex: 1; }
+  .step-header .toggle {
+    font-size: 20px; color: var(--text-muted);
+    transition: transform 0.3s;
+  }
+  .step-header.active .toggle { transform: rotate(180deg); }
+  .step-body {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.5s ease;
+  }
+  .step-body.open { max-height: 3000px; }
+  .step-content { padding: 0 24px 24px; }
+
+  /* ===== 代码块 ===== */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin: 12px 0;
+    overflow-x: auto;
+    position: relative;
+  }
+  .code-block .lang {
+    position: absolute; top: 8px; right: 12px;
+    font-size: 11px; color: var(--text-muted);
+    background: var(--bg-card); padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .code-block pre {
+    padding: 16px; font-size: 13px;
+    font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+    line-height: 1.6; color: #c9d1d9;
+    white-space: pre; tab-size: 2;
+  }
+  .code-block .kw { color: #ff7b72; }
+  .code-block .str { color: #a5d6ff; }
+  .code-block .fn { color: #d2a8ff; }
+  .code-block .cm { color: #8b949e; font-style: italic; }
+  .code-block .num { color: #79c0ff; }
+  .code-block .prop { color: #ffa657; }
+  .code-block .op { color: #ff7b72; }
+
+  /* ===== 关键代码表格 ===== */
+  .key-table {
+    width: 100%; border-collapse: collapse;
+    margin: 12px 0; font-size: 13px;
+  }
+  .key-table th {
+    text-align: left; padding: 10px 12px;
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--accent); font-weight: 600;
+    border-bottom: 2px solid var(--border);
+  }
+  .key-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .key-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .key-table code {
+    background: var(--code-bg); padding: 2px 6px;
+    border-radius: 4px; font-size: 12px;
+    font-family: 'Fira Code', monospace;
+    color: var(--accent3);
+  }
+
+  /* ===== 数据流可视化 ===== */
+  .dataflow {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px; margin: 20px 0;
+  }
+  .flow-row {
+    display: flex; align-items: stretch;
+    margin-bottom: 16px; position: relative;
+  }
+  .flow-row:last-child { margin-bottom: 0; }
+  .flow-label {
+    width: 140px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 13px;
+    padding: 12px; border-radius: 8px;
+    text-align: center;
+  }
+  .flow-label.page { background: rgba(99,102,241,0.15); color: #818cf8; }
+  .flow-label.merge { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .flow-label.db { background: rgba(239,68,68,0.15); color: #f87171; }
+  .flow-arrow-col {
+    width: 60px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .flow-arrow-col svg { width: 24px; height: 24px; }
+  .flow-arrow-col svg path {
+    stroke: var(--text-muted); fill: none;
+    stroke-width: 2; stroke-dasharray: 6 4;
+    animation: dashFlow 1s linear infinite;
+  }
+  @keyframes dashFlow {
+    to { stroke-dashoffset: -10; }
+  }
+  .flow-data {
+    flex: 1; padding: 12px 16px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Fira Code', monospace;
+    font-size: 12px; color: #c9d1d9;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .flow-data .hl-key { color: #ffa657; }
+  .flow-data .hl-str { color: #a5d6ff; }
+  .flow-data .hl-num { color: #79c0ff; }
+
+  /* ===== 问题卡片 ===== */
+  .issues-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px; margin: 20px 0;
+  }
+  .issue-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .issue-card::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+  }
+  .issue-card.warn::after { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .issue-card.danger::after { background: linear-gradient(90deg, #ef4444, #f87171); }
+  .issue-card.info::after { background: linear-gradient(90deg, #0ea5e9, #38bdf8); }
+  .issue-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .issue-card .issue-tag {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 4px; margin-bottom: 10px;
+  }
+  .issue-card.warn .issue-tag { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .issue-card.danger .issue-tag { background: rgba(239,68,68,0.15); color: #f87171; }
+  .issue-card.info .issue-tag { background: rgba(14,165,233,0.15); color: #38bdf8; }
+  .issue-card h4 { font-size: 15px; margin-bottom: 8px; }
+  .issue-card p { font-size: 13px; color: var(--text-muted); }
+
+  /* ===== 导航 ===== */
+  .nav-bar {
+    position: fixed; top: 0; left: 0; right: 0;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    z-index: 100; padding: 0 24px;
+    display: flex; align-items: center; justify-content: center;
+    height: 52px;
+  }
+  .nav-bar a {
+    color: var(--text-muted); text-decoration: none;
+    font-size: 13px; font-weight: 500;
+    padding: 6px 14px; border-radius: 6px;
+    transition: all 0.2s;
+  }
+  .nav-bar a:hover, .nav-bar a.active {
+    color: var(--accent); background: rgba(56,189,248,0.08);
+  }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 768px) {
+    .arch-flow { flex-direction: column; }
+    .arch-arrow { transform: rotate(90deg); }
+    .flow-row { flex-direction: column; }
+    .flow-label { width: 100%; }
+    .flow-arrow-col { transform: rotate(90deg); width: auto; height: 30px; }
+    .nav-bar { display: none; }
+  }
+
+  /* ===== 滚动动画 ===== */
+  .fade-in {
+    opacity: 0; transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .fade-in.visible {
+    opacity: 1; transform: translateY(0);
+  }
+
+  /* ===== Tab 切换 ===== */
+  .tab-bar {
+    display: flex; gap: 4px; margin-bottom: 16px;
+    background: var(--code-bg); border-radius: 8px;
+    padding: 4px; border: 1px solid var(--border);
+    width: fit-content;
+  }
+  .tab-btn {
+    padding: 8px 16px; border: none; background: transparent;
+    color: var(--text-muted); font-size: 13px; font-weight: 500;
+    border-radius: 6px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab-btn.active {
+    background: var(--accent); color: #0f172a; font-weight: 700;
+  }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ===== 技术栈标签 ===== */
+  .tech-tags {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin: 16px 0;
+  }
+  .tech-tag {
+    padding: 6px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+    border: 1px solid;
+  }
+  .tech-tag.ts { border-color: #3178c6; color: #3178c6; background: rgba(49,120,198,0.08); }
+  .tech-tag.mysql { border-color: #00758f; color: #00758f; background: rgba(0,117,143,0.08); }
+  .tech-tag.puppeteer { border-color: #40b5a4; color: #40b5a4; background: rgba(64,181,164,0.08); }
+  .tech-tag.cli { border-color: #818cf8; color: #818cf8; background: rgba(129,140,248,0.08); }
+</style>
+</head>
+<body>
+
+<!-- 背景粒子 -->
+<div class="bg-particles" id="particles"></div>
+
+<!-- 导航栏 -->
+<nav class="nav-bar">
+  <a href="#overview">概览</a>
+  <a href="#architecture">架构</a>
+  <a href="#steps">步骤详解</a>
+  <a href="#dataflow">数据流</a>
+  <a href="#issues">问题与建议</a>
+</nav>
+
+<div class="container">
+
+  <!-- Hero -->
+  <div class="hero fade-in">
+    <div class="hero-badge">CODE ANALYSIS</div>
+    <h1>微信视频号数据抓取系统</h1>
+    <p>基于 OpenCLI + Puppeteer 的自动化数据采集与 MySQL 持久化方案深度解析</p>
+    <div class="tech-tags" style="justify-content: center;">
+      <span class="tech-tag ts">TypeScript</span>
+      <span class="tech-tag puppeteer">Puppeteer</span>
+      <span class="tech-tag mysql">MySQL</span>
+      <span class="tech-tag cli">OpenCLI</span>
+    </div>
+  </div>
+
+  <!-- 概览 -->
+  <section id="overview">
+    <h2 class="section-title fade-in"><span class="num">0</span> 项目概览</h2>
+    <div class="overview-grid">
+      <div class="overview-card fade-in">
+        <div class="icon">📡</div>
+        <h3>数据采集</h3>
+        <p>通过浏览器自动化抓取视频号后台的视频统计数据和评论列表</p>
+      </div>
+      <div class="overview-card fade-in">
+        <div class="icon">🔗</div>
+        <h3>数据关联</h3>
+        <p>将视频统计信息与对应评论列表按标题进行智能匹配合并</p>
+      </div>
+      <div class="overview-card fade-in">
+        <div class="icon">💾</div>
+        <h3>数据持久化</h3>
+        <p>使用 MySQL utf8mb4 字符集完整存储 emoji 和复杂汉字</p>
+      </div>
+      <div class="overview-card fade-in">
+        <div class="icon">🔄</div>
+        <h3>增量更新</h3>
+        <p>UPSERT 策略避免重复插入，评论数据先删后插保持最新</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 架构 -->
+  <section id="architecture">
+    <h2 class="section-title fade-in"><span class="num">A</span> 整体架构</h2>
+    <div class="arch-flow fade-in">
+      <div class="arch-node cli">
+        CLI 命令注册
+        <div class="sub">OpenCLI 框架</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node browser">
+        浏览器自动化
+        <div class="sub">Puppeteer + iframe</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node data">
+        数据抓取
+        <div class="sub">统计 + 评论</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node merge">
+        数据合并
+        <div class="sub">标题匹配关联</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node db">
+        MySQL 存储
+        <div class="sub">utf8mb4 持久化</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 步骤详解 -->
+  <section id="steps">
+    <h2 class="section-title fade-in"><span class="num">B</span> 步骤详解</h2>
+
+    <!-- Step 1 -->
+    <div class="step-card fade-in">
+      <div class="step-header" onclick="toggleStep(this)">
+        <div class="step-num s1">1</div>
+        <h3>CLI 命令注册与配置</h3>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="step-body">
+        <div class="step-content">
+          <p style="color: var(--text-muted); margin-bottom: 16px;">
+            使用 <code style="color:var(--accent)">@jackwener/opencli</code> 框架声明一个名为 <code style="color:var(--accent)">stats</code> 的命令，
+            配置目标域名、浏览器策略、参数限制和输出列定义。
+          </p>
+          <div class="code-block">
+            <span class="lang">TypeScript</span>
+<pre><span class="kw">export const</span> <span class="fn">statsCommand</span> = <span class="fn">cli</span>({
+  <span class="prop">site</span>: <span class="str">'channels'</span>,
+  <span class="prop">name</span>: <span class="str">'stats'</span>,
+  <span class="prop">strategy</span>: Strategy.<span class="prop">UI</span>,    <span class="cm">// 使用 UI 自动化策略（浏览器操作）</span>
+  <span class="prop">browser</span>: <span class="kw">true</span>,             <span class="cm">// 启用浏览器</span>
+  <span class="prop">domain</span>: <span class="str">'channels.weixin.qq.com'</span>,
+  <span class="prop">args</span>: [
+    { <span class="prop">name</span>: <span class="str">'limit'</span>, <span class="prop">type</span>: <span class="str">'int'</span>, <span class="prop">default</span>: <span class="num">20</span> },
+  ],
+  <span class="prop">columns</span>: [<span class="str">'title'</span>, <span class="str">'time'</span>, <span class="str">'views'</span>, <span class="str">'likes'</span>, <span class="str">'comments_count'</span>, <span class="str">'shares'</span>, <span class="str">'thumbs'</span>, <span class="str">'cover'</span>],
+  <span class="prop">func</span>: <span class="kw">async</span> (page, kwargs) => { ... }
+});</pre>
+          </div>
+          <table class="key-table">
+            <thead><tr><th>关键配置</th><th>作用</th></tr></thead>
+            <tbody>
+              <tr><td><code>Strategy.UI</code></td><td>通过浏览器模拟用户操作来抓取数据</td></tr>
+              <tr><td><code>browser: true</code></td><td>启用 Puppeteer 浏览器实例</td></tr>
+              <tr><td><code>args: [{ limit }]</code></td><td>接受命令行参数控制最大抓取视频数</td></tr>
+              <tr><td><code>columns</code></td><td>定义输出的列结构，用于表格化展示</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step-card fade-in">
+      <div class="step-header" onclick="toggleStep(this)">
+        <div class="step-num s2">2</div>
+        <h3>抓取视频统计数据（视频管理列表页）</h3>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="step-body">
+        <div class="step-content">
+          <p style="color: var(--text-muted); margin-bottom: 16px;">
+            导航到视频管理页面，在 iframe 内遍历视频卡片，提取标题、时间、封面和各项统计数据。
+          </p>
+          <div class="code-block">
+            <span class="lang">TypeScript</span>
+<pre><span class="cm">// 导航到视频管理页面</span>
+<span class="kw">await</span> page.<span class="fn">goto</span>(<span class="str">'https://channels.weixin.qq.com/platform/post/list?tab=post'</span>, {
+  <span class="prop">settleMs</span>: <span class="num">5000</span>
+});
+
+<span class="cm">// 在 iframe 内执行 DOM 操作</span>
+<span class="kw">const</span> videosStats = <span class="kw">await</span> page.<span class="fn">evaluate</span>(<span class="str">`(async () => {
+  const iframe = document.querySelector("iframe");
+  const doc = iframe.contentDocument;
+  const videoEls = doc.querySelectorAll(".post-feed-item");
+  // 遍历每个视频卡片，提取数据...
+})()`</span>);</pre>
+          </div>
+          <table class="key-table">
+            <thead><tr><th>选择器</th><th>提取内容</th></tr></thead>
+            <tbody>
+              <tr><td><code>iframe.contentDocument</code></td><td>微信后台使用 iframe 嵌套，必须进入 iframe 内操作 DOM</td></tr>
+              <tr><td><code>.post-feed-item</code></td><td>每个视频卡片容器</td></tr>
+              <tr><td><code>.post-title</code></td><td>视频标题</td></tr>
+              <tr><td><code>img.thumb</code></td><td>封面图 URL</td></tr>
+              <tr><td><code>.data-item</code></td><td>统计项（访问量、点赞、评论、分享、推荐）</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step-card fade-in">
+      <div class="step-header" onclick="toggleStep(this)">
+        <div class="step-num s3">3</div>
+        <h3>抓取评论数据（评论管理页面）</h3>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="step-body">
+        <div class="step-content">
+          <p style="color: var(--text-muted); margin-bottom: 16px;">
+            跳转到评论管理页面，逐个点击视频展开评论列表，提取用户名、头像、时间和内容。
+          </p>
+          <div class="code-block">
+            <span class="lang">TypeScript</span>
+<pre><span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">0</span>; i < limit; i++) {
+  videoEls[i].<span class="fn">click</span>();                          <span class="cm">// 点击视频展开评论</span>
+  <span class="kw">await new</span> <span class="fn">Promise</span>(r => <span class="fn">setTimeout</span>(r, <span class="num">2000</span>));  <span class="cm">// 等待加载</span>
+
+  <span class="kw">const</span> commentEls = doc.<span class="fn">querySelectorAll</span>(<span class="str">".comment-item"</span>);
+  <span class="kw">const</span> comments = commentEls.<span class="fn">map</span>(el => ({
+    <span class="prop">user</span>: el.<span class="fn">querySelector</span>(<span class="str">".comment-user-name"</span>)?.innerText,
+    <span class="prop">avatar</span>: el.<span class="fn">querySelector</span>(<span class="str">"img.comment-avatar"</span>)?.src,
+    <span class="prop">time</span>: el.<span class="fn">querySelector</span>(<span class="str">".comment-time"</span>)?.innerText,
+    <span class="prop">content</span>: el.<span class="fn">querySelector</span>(<span class="str">".comment-content"</span>)?.innerText
+  }));
+}</pre>
+          </div>
+          <table class="key-table">
+            <thead><tr><th>关键逻辑</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td><code>videoEls[i].click()</code></td><td>逐个点击视频以展开其评论列表</td></tr>
+              <tr><td><code>setTimeout(r, 2000)</code></td><td>每次点击后等待 2 秒让评论加载完成</td></tr>
+              <tr><td><code>img.comment-avatar</code></td><td>提取评论者头像 URL</td></tr>
+              <tr><td>图片评论降级</td><td>若文字内容为空，检查是否有图片并标记为 [图片]</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step-card fade-in">
+      <div class="step-header" onclick="toggleStep(this)">
+        <div class="step-num s4">4</div>
+        <h3>数据合并（标题匹配关联）</h3>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="step-body">
+        <div class="step-content">
+          <p style="color: var(--text-muted); margin-bottom: 16px;">
+            通过视频标题将统计数据和评论数据进行关联，生成完整的最终结果。
+          </p>
+          <div class="code-block">
+            <span class="lang">TypeScript</span>
+<pre><span class="kw">const</span> finalResults = statsList.<span class="fn">map</span>((stat) => {
+  <span class="cm">// 在评论数据中寻找相同标题的视频</span>
+  <span class="kw">const</span> matchedCommentData = commentsList.<span class="fn">find</span>(
+    (c) => c.title === stat.title
+  );
+  <span class="kw">return</span> {
+    ...stat,
+    <span class="prop">comments_list</span>: matchedCommentData
+      ? matchedCommentData.comments
+      : []
+  };
+});</pre>
+          </div>
+          <div style="background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 8px; padding: 12px 16px; margin-top: 12px;">
+            <strong style="color: #fbbf24;">⚠ 潜在风险：</strong>
+            <span style="color: var(--text-muted); font-size: 13px;">
+              使用标题字符串匹配，如果标题存在细微差异（空格、截断、特殊字符）会导致匹配失败。建议使用视频唯一 ID 进行关联。
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="step-card fade-in">
+      <div class="step-header" onclick="toggleStep(this)">
+        <div class="step-num s5">5</div>
+        <h3>写入 MySQL 数据库</h3>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="step-body">
+        <div class="step-content">
+          <p style="color: var(--text-muted); margin-bottom: 16px;">
+            连接 MySQL 数据库，创建表结构，使用 UPSERT 策略写入视频和评论数据。
+          </p>
+
+          <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab(event, 'tab-connect')">连接配置</button>
+            <button class="tab-btn" onclick="switchTab(event, 'tab-schema')">表结构</button>
+            <button class="tab-btn" onclick="switchTab(event, 'tab-insert')">数据写入</button>
+          </div>
+
+          <div class="tab-panel active" id="tab-connect">
+            <div class="code-block">
+              <span class="lang">TypeScript</span>
+<pre><span class="kw">const</span> connection = <span class="kw">await</span> mysql.<span class="fn">createConnection</span>({
+  <span class="prop">host</span>: <span class="str">'10.1.28.16'</span>,
+  <span class="prop">port</span>: <span class="num">3306</span>,
+  <span class="prop">user</span>: <span class="str">'root'</span>,
+  <span class="prop">password</span>: <span class="str">'root'</span>,
+  <span class="prop">charset</span>: <span class="str">'utf8mb4'</span>  <span class="cm">// 关键！支持 emoji 和复杂汉字</span>
+});
+
+<span class="cm">// 强制会话字符集</span>
+<span class="kw">await</span> connection.<span class="fn">query</span>(<span class="str">'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci'</span>);
+<span class="cm">// 修改数据库字符集</span>
+<span class="kw">await</span> connection.<span class="fn">query</span>(<span class="str">'ALTER DATABASE ... CHARACTER SET utf8mb4'</span>);</pre>
+            </div>
+            <p style="color: var(--text-muted); font-size: 13px; margin-top: 8px;">
+              <strong style="color: var(--accent);">utf8mb4</strong> 是 MySQL 中唯一能完整存储 4 字节 Unicode 字符（如 emoji）的字符集。
+              微信昵称和评论中经常包含 emoji，用普通 utf8（3 字节）会导致数据丢失。
+            </p>
+          </div>
+
+          <div class="tab-panel" id="tab-schema">
+            <div class="code-block">
+              <span class="lang">SQL</span>
+<pre><span class="cm">-- 视频统计表</span>
+<span class="kw">CREATE TABLE IF NOT EXISTS</span> video_stats (
+  id       <span class="kw">INT AUTO_INCREMENT PRIMARY KEY</span>,
+  title    <span class="kw">VARCHAR</span>(<span class="num">255</span>) <span class="kw">NOT NULL</span>,
+  time     <span class="kw">VARCHAR</span>(<span class="num">100</span>),
+  views    <span class="kw">INT DEFAULT</span> <span class="num">0</span>,
+  likes    <span class="kw">INT DEFAULT</span> <span class="num">0</span>,
+  comments_count <span class="kw">INT DEFAULT</span> <span class="num">0</span>,
+  shares   <span class="kw">INT DEFAULT</span> <span class="num">0</span>,
+  thumbs   <span class="kw">INT DEFAULT</span> <span class="num">0</span>,
+  cover    <span class="kw">VARCHAR</span>(<span class="num">1024</span>),
+  created_at <span class="kw">TIMESTAMP DEFAULT CURRENT_TIMESTAMP</span>,
+  <span class="kw">UNIQUE KEY</span> unique_title_time (title, time)
+);
+
+<span class="cm">-- 评论表</span>
+<span class="kw">CREATE TABLE IF NOT EXISTS</span> video_comments (
+  id       <span class="kw">INT AUTO_INCREMENT PRIMARY KEY</span>,
+  video_id <span class="kw">INT NOT NULL</span>,
+  user     <span class="kw">VARCHAR</span>(<span class="num">255</span>),
+  time     <span class="kw">VARCHAR</span>(<span class="num">100</span>),
+  content  <span class="kw">TEXT</span>,
+  avatar   <span class="kw">VARCHAR</span>(<span class="num">1024</span>),
+  <span class="kw">FOREIGN KEY</span> (video_id) <span class="kw">REFERENCES</span> video_stats(id)
+    <span class="kw">ON DELETE CASCADE</span>
+);</pre>
+            </div>
+          </div>
+
+          <div class="tab-panel" id="tab-insert">
+            <div class="code-block">
+              <span class="lang">TypeScript</span>
+<pre><span class="cm">// 视频 UPSERT：存在则更新，不存在则插入</span>
+<span class="kw">await</span> connection.<span class="fn">query</span>(<span class="str">`
+  INSERT INTO video_stats (title, time, views, likes, ...)
+  VALUES (?, ?, ?, ?, ...)
+  ON DUPLICATE KEY UPDATE
+    views = VALUES(views),
+    likes = VALUES(likes), ...
+`</span>, [safeTitle, result.time, ...]);
+
+<span class="cm">// 评论：先删后插（保证数据最新）</span>
+<span class="kw">await</span> connection.<span class="fn">query</span>(
+  <span class="str">'DELETE FROM video_comments WHERE video_id = ?'</span>,
+  [videoId]
+);
+<span class="kw">await</span> connection.<span class="fn">query</span>(<span class="str">`
+  INSERT INTO video_comments (video_id, user, time, content, avatar)
+  VALUES ?
+`</span>, [commentValues]);</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 数据流 -->
+  <section id="dataflow">
+    <h2 class="section-title fade-in"><span class="num">C</span> 数据流可视化</h2>
+    <div class="dataflow fade-in">
+      <div class="flow-row">
+        <div class="flow-label page">📄 视频管理页</div>
+        <div class="flow-arrow-col">
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+        <div class="flow-data">[{
+  <span class="hl-key">"title"</span>: <span class="hl-str">"春季穿搭分享"</span>,
+  <span class="hl-key">"time"</span>: <span class="hl-str">"2025-03-15"</span>,
+  <span class="hl-key">"cover"</span>: <span class="hl-str">"https://..."</span>,
+  <span class="hl-key">"views"</span>: <span class="hl-num">"1.2万"</span>,
+  <span class="hl-key">"likes"</span>: <span class="hl-num">"366"</span>,
+  <span class="hl-key">"comments_count"</span>: <span class="hl-num">"58"</span>,
+  <span class="hl-key">"shares"</span>: <span class="hl-num">"12"</span>,
+  <span class="hl-key">"thumbs"</span>: <span class="hl-num">"89"</span>
+}]</div>
+      </div>
+
+      <div class="flow-row">
+        <div class="flow-label page">💬 评论管理页</div>
+        <div class="flow-arrow-col">
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+        <div class="flow-data">[{
+  <span class="hl-key">"title"</span>: <span class="hl-str">"春季穿搭分享"</span>,
+  <span class="hl-key">"comments"</span>: [{
+    <span class="hl-key">"user"</span>: <span class="hl-str">"小明"</span>,
+    <span class="hl-key">"avatar"</span>: <span class="hl-str">"https://..."</span>,
+    <span class="hl-key">"time"</span>: <span class="hl-str">"03-15 14:22"</span>,
+    <span class="hl-key">"content"</span>: <span class="hl-str">"太好看了！"</span>
+  }]
+}]</div>
+      </div>
+
+      <div class="flow-row">
+        <div class="flow-label merge">🔗 标题匹配合并</div>
+        <div class="flow-arrow-col">
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+        <div class="flow-data">{
+  <span class="hl-key">"title"</span>: <span class="hl-str">"春季穿搭分享"</span>,
+  <span class="hl-key">"views"</span>: <span class="hl-num">"1.2万"</span>,
+  <span class="hl-key">"likes"</span>: <span class="hl-num">"366"</span>,
+  <span class="hl-key">"comments_list"</span>: [
+    { <span class="hl-key">"user"</span>: <span class="hl-str">"小明"</span>, <span class="hl-key">"content"</span>: <span class="hl-str">"太好看了！"</span> },
+    { <span class="hl-key">"user"</span>: <span class="hl-str">"小红"</span>, <span class="hl-key">"content"</span>: <span class="hl-str">"链接在哪？"</span> }
+  ]
+}</div>
+      </div>
+
+      <div class="flow-row">
+        <div class="flow-label db">🗄️ MySQL</div>
+        <div class="flow-arrow-col">
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+        <div class="flow-data"><span style="color: var(--accent3);">video_stats</span>  ──┬── <span style="color: var(--accent3);">id</span>: 1 (PK)
+  ├── <span style="color: var(--accent3);">title</span>: "春季穿搭分享"
+  ├── <span style="color: var(--accent3);">views</span>: 12000
+  └── <span style="color: var(--accent3);">likes</span>: 366
+
+<span style="color: var(--accent3);">video_comments</span> ──┬── <span style="color: var(--accent3);">video_id</span>: 1 (FK → video_stats.id)
+  ├── <span style="color: var(--accent3);">user</span>: "小明"
+  └── <span style="color: var(--accent3);">content</span>: "太好看了！"</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 问题与建议 -->
+  <section id="issues">
+    <h2 class="section-title fade-in"><span class="num">D</span> 潜在问题与改进建议</h2>
+    <div class="issues-grid">
+      <div class="issue-card danger fade-in">
+        <div class="issue-tag">🔴 高风险</div>
+        <h4>数据库凭据硬编码</h4>
+        <p>root/root 直接写在代码中，存在严重安全隐患。应使用环境变量或配置文件管理敏感信息。</p>
+      </div>
+      <div class="issue-card warn fade-in">
+        <div class="issue-tag">🟡 中风险</div>
+        <h4>标题匹配不可靠</h4>
+        <p>通过标题字符串匹配关联数据，如果标题有细微差异（空格、截断）就会匹配失败，建议使用视频唯一 ID。</p>
+      </div>
+      <div class="issue-card warn fade-in">
+        <div class="issue-tag">🟡 中风险</div>
+        <h4>硬编码等待时间</h4>
+        <p>setTimeout 固定等待 4 秒，页面加载慢时会失败。建议使用 waitForSelector 或 waitForNavigation。</p>
+      </div>
+      <div class="issue-card info fade-in">
+        <div class="issue-tag">🔵 性能</div>
+        <h4>评论逐个点击效率低</h4>
+        <p>每个视频需点击 + 等 2 秒，limit=20 时至少 40 秒。可考虑并行请求或直接调用内部 API。</p>
+      </div>
+      <div class="issue-card warn fade-in">
+        <div class="issue-tag">🟡 中风险</div>
+        <h4>URL 反引号问题</h4>
+        <p>page.goto 中的 URL 使用了反引号包裹，可能是模板字符串转义问题，实际运行时可能导致导航失败。</p>
+      </div>
+      <div class="issue-card info fade-in">
+        <div class="issue-tag">🔵 优化</div>
+        <h4>评论先删后插策略</h4>
+        <p>每次运行都清空旧评论重新插入，虽然简单但效率不高。大数据量时可考虑增量对比更新。</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// ===== 背景粒子 =====
+(function() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 30; i++) {
+    const span = document.createElement('span');
+    span.style.left = Math.random() * 100 + '%';
+    span.style.animationDuration = (8 + Math.random() * 12) + 's';
+    span.style.animationDelay = Math.random() * 10 + 's';
+    span.style.width = span.style.height = (2 + Math.random() * 4) + 'px';
+    const colors = ['#38bdf8', '#818cf8', '#34d399', '#f472b6'];
+    span.style.background = colors[Math.floor(Math.random() * colors.length)];
+    container.appendChild(span);
+  }
+})();
+
+// ===== 步骤展开/折叠 =====
+function toggleStep(header) {
+  const body = header.nextElementSibling;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open');
+  header.classList.toggle('active');
+}
+
+// ===== Tab 切换 =====
+function switchTab(e, tabId) {
+  const parent = e.target.closest('.step-content');
+  parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  parent.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+
+// ===== 滚动动画 =====
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ===== 导航高亮 =====
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-bar a');
+
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(section => {
+    const top = section.offsetTop - 100;
+    if (window.scrollY >= top) {
+      current = section.getAttribute('id');
+    }
+  });
+  navLinks.forEach(link => {
+    link.classList.remove('active');
+    if (link.getAttribute('href') === '#' + current) {
+      link.classList.add('active');
+    }
+  });
+});
+
+// ===== 平滑滚动 =====
+navLinks.forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+
+</body>
+</html>

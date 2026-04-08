@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenCLI × Trae — 微信视频号数据抓取实战</title>
+    <style>
+        /* ===== CSS Reset & Base ===== */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2235;
+            --bg-code: #0d1117;
+            --accent-cyan: #00f0ff;
+            --accent-green: #00ff88;
+            --accent-purple: #a855f7;
+            --accent-pink: #f472b6;
+            --accent-orange: #fb923c;
+            --accent-yellow: #facc15;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-dim: #64748b;
+            --border-color: #1e293b;
+            --glow-cyan: 0 0 20px rgba(0, 240, 255, 0.3);
+            --glow-green: 0 0 20px rgba(0, 255, 136, 0.3);
+            --glow-purple: 0 0 20px rgba(168, 85, 247, 0.3);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ===== Animated Background ===== */
+        .bg-grid {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .bg-particles {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px; height: 2px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            animation: float-particle linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes float-particle {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+
+        /* ===== Navigation ===== */
+        .nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            background: rgba(10, 14, 23, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 2rem;
+        }
+
+        .nav-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+
+        .nav-logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-logo .logo-icon {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: #000;
+            font-weight: 900;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-cyan);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px; left: 0;
+            width: 0; height: 2px;
+            background: var(--accent-cyan);
+            transition: width 0.3s;
+        }
+
+        .nav-links a:hover::after { width: 100%; }
+
+        /* ===== Main Content ===== */
+        .main-content {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* ===== Hero Section ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding-top: 64px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            border: 1px solid var(--accent-cyan);
+            border-radius: 999px;
+            font-size: 0.8rem;
+            color: var(--accent-cyan);
+            margin-bottom: 2rem;
+            animation: pulse-border 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { box-shadow: 0 0 5px rgba(0, 240, 255, 0.2); }
+            50% { box-shadow: 0 0 20px rgba(0, 240, 255, 0.4); }
+        }
+
+        .hero-badge .dot {
+            width: 6px; height: 6px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 50%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero h1 .highlight {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin-bottom: 2.5rem;
+            line-height: 1.8;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.8rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-green));
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            box-shadow: var(--glow-cyan);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 3rem;
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .hero-stat {
+            text-align: center;
+        }
+
+        .hero-stat .value {
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--accent-cyan);
+        }
+
+        .hero-stat .label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-top: 0.25rem;
+        }
+
+        /* ===== Section Common ===== */
+        .section {
+            padding: 6rem 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--accent-cyan);
+            margin-bottom: 1rem;
+            padding: 0.3rem 0.8rem;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        .section-title {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 900;
+            margin-bottom: 1rem;
+        }
+
+        .section-desc {
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 1rem;
+        }
+
+        /* ===== Image Gallery ===== */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+        }
+
+        .gallery-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.4s;
+            position: relative;
+        }
+
+        .gallery-card:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+            transform: translateY(-4px);
+        }
+
+        .gallery-card img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .gallery-card .card-label {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .gallery-card .card-label h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 0.3rem;
+        }
+
+        .gallery-card .card-label p {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .gallery-card .card-number {
+            position: absolute;
+            top: 1rem; left: 1rem;
+            width: 36px; height: 36px;
+            background: rgba(0, 240, 255, 0.15);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 900;
+            color: var(--accent-cyan);
+            backdrop-filter: blur(10px);
+        }
+
+        /* ===== Feature Cards ===== */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--accent-purple);
+            box-shadow: var(--glow-purple);
+        }
+
+        .feature-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.6rem;
+        }
+
+        .feature-card p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* ===== Code Explanation ===== */
+        .code-section {
+            margin-bottom: 4rem;
+        }
+
+        .code-section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .code-section-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .code-section-header h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .code-section-header .file-tag {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 0.2rem;
+        }
+
+        /* Step Explanation */
+        .step-explain {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+            position: relative;
+        }
+
+        .step-explain::before {
+            content: '';
+            position: absolute;
+            left: 23px;
+            top: 48px;
+            bottom: -20px;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--accent-cyan), transparent);
+        }
+
+        .step-explain:last-child::before {
+            display: none;
+        }
+
+        .step-number {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 900;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-content {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .step-content-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .step-content-header h3 {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .step-content-header .step-tag {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .step-desc {
+            padding: 1rem 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .step-desc strong {
+            color: var(--text-primary);
+        }
+
+        .step-desc code {
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--accent-cyan);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        /* Code Block */
+        .code-block {
+            position: relative;
+        }
+
+        .code-block-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.2rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .code-block-dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .code-block-dots span {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+        }
+
+        .code-block-dots span:nth-child(1) { background: #ff5f57; }
+        .code-block-dots span:nth-child(2) { background: #ffbd2e; }
+        .code-block-dots span:nth-child(3) { background: #28c840; }
+
+        .code-block-lang {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        .code-block pre {
+            padding: 1.2rem;
+            overflow-x: auto;
+            font-size: 0.8rem;
+            font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+            line-height: 1.6;
+            color: #c9d1d9;
+            background: var(--bg-code);
+            white-space: pre;
+            tab-size: 2;
+        }
+
+        .code-block code {
+            font-family: inherit;
+            color: #c9d1d9;
+        }
+
+        /* Syntax Highlighting (与 code-analysis.html 统一) */
+        .kw { color: #ff7b72; }
+        .fn { color: #d2a8ff; }
+        .str { color: #a5d6ff; }
+        .cm { color: #8b949e; font-style: italic; }
+        .num { color: #79c0ff; }
+        .op { color: #ff7b72; }
+        .type { color: #ffa657; }
+        .prop { color: #ffa657; }
+
+        /* ===== Comparison Table ===== */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .comparison-table thead {
+            background: rgba(0, 240, 255, 0.05);
+        }
+
+        .comparison-table th {
+            padding: 1rem 1.2rem;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: var(--accent-cyan);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table td {
+            padding: 0.8rem 1.2rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            vertical-align: top;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table tr:hover {
+            background: rgba(0, 240, 255, 0.02);
+        }
+
+        .comparison-table .highlight-col {
+            background: rgba(0, 255, 136, 0.03);
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        /* ===== Pitfalls ===== */
+        .pitfall-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .pitfall-card:hover {
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 20px rgba(251, 146, 60, 0.15);
+        }
+
+        .pitfall-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            background: rgba(251, 146, 60, 0.1);
+            border: 1px solid rgba(251, 146, 60, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .pitfall-content h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--accent-orange);
+            margin-bottom: 0.5rem;
+        }
+
+        .pitfall-content p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .pitfall-content .solution {
+            margin-top: 0.8rem;
+            padding: 0.8rem 1rem;
+            background: rgba(0, 255, 136, 0.05);
+            border-left: 3px solid var(--accent-green);
+            border-radius: 0 8px 8px 0;
+            font-size: 0.8rem;
+            color: var(--accent-green);
+        }
+
+        /* ===== Deployment ===== */
+        .deploy-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .deploy-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1.2rem 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .deploy-step:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        .deploy-step-num {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 900;
+            color: var(--accent-cyan);
+            flex-shrink: 0;
+        }
+
+        .deploy-step-content {
+            flex: 1;
+        }
+
+        .deploy-step-content h4 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+        }
+
+        .deploy-step-content p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .deploy-step-content code {
+            display: block;
+            margin-top: 0.5rem;
+            padding: 0.6rem 1rem;
+            background: var(--bg-code);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.78rem;
+            color: var(--accent-green);
+        }
+
+        /* ===== Footer ===== */
+        .footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+
+        .footer a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+
+        /* ===== Scroll Animations ===== */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .gallery-grid { grid-template-columns: 1fr; }
+            .hero-stats { flex-direction: column; gap: 1.5rem; }
+            .step-explain { flex-direction: column; }
+            .step-explain::before { display: none; }
+            .comparison-table { font-size: 0.75rem; }
+            .comparison-table th, .comparison-table td { padding: 0.6rem 0.8rem; }
+        }
+
+        /* ===== Scrollbar ===== */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
+
+        /* ===== Typing Animation ===== */
+        .typing-cursor::after {
+            content: '|';
+            animation: blink-cursor 0.8s step-end infinite;
+            color: var(--accent-cyan);
+        }
+
+        @keyframes blink-cursor {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* ===== Glow Line ===== */
+        .glow-line {
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 2px;
+            margin: 1rem auto;
+        }
+
+        /* ===== Tech Badge ===== */
+        .tech-badges {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .tech-badge {
+            padding: 0.25rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border: 1px solid;
+        }
+
+        .badge-cyan { border-color: rgba(0, 240, 255, 0.3); color: var(--accent-cyan); background: rgba(0, 240, 255, 0.05); }
+        .badge-green { border-color: rgba(0, 255, 136, 0.3); color: var(--accent-green); background: rgba(0, 255, 136, 0.05); }
+        .badge-purple { border-color: rgba(168, 85, 247, 0.3); color: var(--accent-purple); background: rgba(168, 85, 247, 0.05); }
+        .badge-orange { border-color: rgba(251, 146, 60, 0.3); color: var(--accent-orange); background: rgba(251, 146, 60, 0.05); }
+        .badge-pink { border-color: rgba(244, 114, 182, 0.3); color: var(--accent-pink); background: rgba(244, 114, 182, 0.05); }
+    </style>
+</head>
+<body>
+
+<!-- Background Effects -->
+<div class="bg-grid"></div>
+<div class="bg-particles" id="particles"></div>
+
+<!-- Navigation -->
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="#" class="nav-logo">
+            <div class="logo-icon">OC</div>
+            OpenCLI Lab
+        </a>
+        <ul class="nav-links">
+            <li><a href="#overview">概览</a></li>
+            <li><a href="#gallery">素材展示</a></li>
+            <li><a href="#code-stats">数据抓取</a></li>
+            <li><a href="#code-reply">自动回复</a></li>
+            <li><a href="#pitfalls">踩坑记录</a></li>
+            <li><a href="#deploy">部署指南</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="main-content">
+
+    <!-- ===== HERO ===== -->
+    <section class="hero" id="overview">
+        <div class="hero-badge">
+            <span class="dot"></span>
+            OpenCLI × Trae 协同开发实战
+        </div>
+        <h1>
+            微信视频号<br>
+            <span class="highlight">数据抓取与持久化</span><br>
+            实战指南
+        </h1>
+        <p class="hero-subtitle">
+            利用 OpenCLI 的 Browser Bridge 插件 + Trae AI IDE，以 UI 自动化方式优雅、稳定地实现微信视频号数据全量抓取与数据库持久化，并突破性地实现基于评论关键字的自动回复功能。
+        </p>
+        <div class="hero-cta">
+            <a href="#code-stats" class="btn btn-primary">
+                <span>⚡</span> 查看源码解析
+            </a>
+            <a href="#gallery" class="btn btn-outline">
+                <span>🖼</span> OpenCLI 素材展示
+            </a>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <div class="value">2</div>
+                <div class="label">核心脚本</div>
+            </div>
+            <div class="hero-stat">
+                <div class="value">4</div>
+                <div class="label">抓取步骤</div>
+            </div>
+            <div class="hero-stat">
+                <div class="value">3</div>
+                <div class="label">破解"幽灵锁"</div>
+            </div>
+            <div class="hero-stat">
+                <div class="value">0</div>
+                <div class="label">WebDriver 特征</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== GALLERY ===== -->
+    <section class="section" id="gallery">
+        <div class="section-header fade-in">
+            <div class="section-tag">Gallery</div>
+            <h2 class="section-title">OpenCLI 素材展示</h2>
+            <div class="glow-line"></div>
+            <p class="section-desc">五张核心素材图，全面展示 OpenCLI 的能力、原理、上手方式和竞品对比</p>
+        </div>
+
+        <div class="gallery-grid">
+            <!-- Card 1 -->
+            <div class="gallery-card fade-in">
+                <div class="card-number">01</div>
+                <img src="OpenCLI1.jpg" alt="OpenCLI 一文讲透">
+                <div class="card-label">
+                    <h3>OpenCLI 一文讲透</h3>
+                    <p>把任何网站变成命令行 — 2天 1.8K Stars 的 AI 原生工具</p>
+                    <div class="tech-badges">
+                        <span class="tech-badge badge-cyan">AI-Native</span>
+                        <span class="tech-badge badge-green">CLI</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="gallery-card fade-in">
+                <div class="card-number">02</div>
+                <img src="OpenCLI2.jpg" alt="原理：4步搞懂">
+                <div class="card-label">
+                    <h3>原理：4步搞懂</h3>
+                    <p>Chrome扩展 → 守护进程 → CDP协议 → 复用登录态，零配置的完整链路</p>
+                    <div class="tech-badges">
+                        <span class="tech-badge badge-purple">CDP协议</span>
+                        <span class="tech-badge badge-orange">Session复用</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="gallery-card fade-in">
+                <div class="card-number">03</div>
+                <img src="OpenCLI3.jpg" alt="三大能力">
+                <div class="card-label">
+                    <h3>三大核心能力</h3>
+                    <p>网站→CLI (50+平台)、桌面应用→CLI、外部CLI统一管理</p>
+                    <div class="tech-badges">
+                        <span class="tech-badge badge-cyan">50+平台</span>
+                        <span class="tech-badge badge-pink">AI Agent</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="gallery-card fade-in">
+                <div class="card-number">04</div>
+                <img src="OpenCLI4.jpg" alt="三步上手">
+                <div class="card-label">
+                    <h3>三步快速上手</h3>
+                    <p>npm install → opencli setup → opencli list，开箱即用</p>
+                    <div class="tech-badges">
+                        <span class="tech-badge badge-green">Node.js ≥ 20</span>
+                        <span class="tech-badge badge-cyan">Chrome</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 5 -->
+            <div class="gallery-card fade-in">
+                <div class="card-number">05</div>
+                <img src="OpenCLI5.jpg" alt="同类对比 & 局限">
+                <div class="card-label">
+                    <h3>同类对比 & 局限性</h3>
+                    <p>与 Browser-Use、Crawl4AI、Puppeteer 的场景对比，以及诚实的能力边界</p>
+                    <div class="tech-badges">
+                        <span class="tech-badge badge-orange">竞品对比</span>
+                        <span class="tech-badge badge-purple">确定性输出</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FEATURES ===== -->
+    <section class="section" id="features">
+        <div class="section-header fade-in">
+            <div class="section-tag">Why</div>
+            <h2 class="section-title">为什么选择 Trae + OpenCLI？</h2>
+            <div class="glow-line"></div>
+            <p class="section-desc">与传统方案相比，具备降维打击般的技术优势</p>
+        </div>
+
+        <div class="feature-grid fade-in">
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.3);">🔐</div>
+                <h3>完美绕过登录态</h3>
+                <p>直接复用 Chrome 已登录的 Session，无需抓包分析加密 Token，无需破解验证码，真正实现"所见即所得"。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3);">🛡️</div>
+                <h3>零风控风险</h3>
+                <p>Browser Bridge 完全基于真实浏览器运行，没有任何 WebDriver 特征，100% 模拟真实人类行为。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3);">⚡</div>
+                <h3>极速开发</h3>
+                <p>基于声明式 <code>cli()</code> 模板，仅需编写核心 <code>page.evaluate</code> 逻辑。Trae AI 直接看懂报错、自主修复代码。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(251, 146, 60, 0.1); border: 1px solid rgba(251, 146, 60, 0.3);">📦</div>
+                <h3>开箱即用的数据导出</h3>
+                <p>内置格式化引擎，执行时加 <code>-f json</code>、<code>-f csv</code>、<code>-f yaml</code> 即可一键导出复杂嵌套数据。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== CODE: channels-stats.ts ===== -->
+    <section class="section" id="code-stats">
+        <div class="code-section fade-in">
+            <div class="code-section-header">
+                <div class="code-section-icon" style="background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3);">📊</div>
+                <div>
+                    <h2>数据抓取与持久化脚本</h2>
+                    <div class="file-tag">channels-stats.ts — 视频统计 + 评论抓取 + MySQL 入库</div>
+                </div>
+            </div>
+
+            <!-- Step 1 -->
+            <div class="step-explain">
+                <div class="step-number" style="background: rgba(0, 240, 255, 0.1); border: 2px solid var(--accent-cyan); color: var(--accent-cyan);">1</div>
+                <div class="step-content">
+                    <div class="step-content-header">
+                        <h3>CLI 命令注册与配置</h3>
+                        <span class="step-tag" style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan);">入口</span>
+                    </div>
+                    <div class="step-desc">
+                        使用 OpenCLI 的 <code>cli()</code> 声明式接口注册一个名为 <code>channels stats</code> 的命令。配置目标域名 <code>channels.weixin.qq.com</code>，使用 <code>Strategy.UI</code> 策略启用浏览器自动化。通过 <code>args</code> 定义 <code>--limit</code> 参数控制抓取视频数量，<code>columns</code> 声明输出表格的列字段。
+                    </div>
+                    <div class="code-block">
+                        <div class="code-block-header">
+                            <div class="code-block-dots"><span></span><span></span><span></span></div>
+                            <span class="code-block-lang">TypeScript</span>
+                        </div>
+                        <pre><code><span class="kw">import</span> { cli, Strategy } <span class="kw">from</span> <span class="str">'@jackwener/opencli/registry'</span>;
+<span class="kw">import</span> mysql <span class="kw">from</span> <span class="str">'mysql2/promise'</span>;
+
+<span class="kw">export const</span> <span class="fn">statsCommand</span> = <span class="fn">cli</span>({
+  <span class="prop">site</span>: <span class="str">'channels'</span>,
+  <span class="prop">name</span>: <span class="str">'stats'</span>,
+  <span class="prop">description</span>: <span class="str">'获取微信视频号后台所有视频的统计数据及评论列表'</span>,
+  <span class="prop">domain</span>: <span class="str">'channels.weixin.qq.com'</span>,
+  <span class="prop">strategy</span>: Strategy.<span class="type">UI</span>,
+  <span class="prop">browser</span>: <span class="kw">true</span>,
+  <span class="prop">args</span>: [
+    { <span class="prop">name</span>: <span class="str">'limit'</span>, <span class="prop">type</span>: <span class="str">'int'</span>, <span class="prop">default</span>: <span class="num">20</span>, <span class="prop">help</span>: <span class="str">'最大抓取视频数'</span> },
+  ],
+  <span class="prop">columns</span>: [<span class="str">'title'</span>, <span class="str">'time'</span>, <span class="str">'views'</span>, <span class="str">'likes'</span>, <span class="str">'comments_count'</span>, <span class="str">'shares'</span>, <span class="str">'thumbs'</span>, <span class="str">'cover'</span>],
+  <span class="prop">func</span>: <span class="kw">async</span> (<span class="prop">page</span>, <span class="prop">kwargs</span>) => { <span class="cm">/* ... */</span> },
+});</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step-explain">
+                <div class="step-number" style="background: rgba(0, 255, 136, 0.1); border: 2px solid var(--accent-green); color: var(--accent-green);">2</div>
+                <div class="step-content">
+                    <div class="step-content-header">
+                        <h3>穿透 iframe 抓取视频统计元数据</h3>
+                        <span class="step-tag" style="background: rgba(0, 255, 136, 0.1); color: var(--accent-green);">核心</span>
+                    </div>
+                    <div class="step-desc">
+                        微信后台页面内容被深层嵌套在 <code>iframe</code> 中。首先通过 <code>page.goto</code> 跳转到视频管理列表页，并设置 <code>settleMs: 5000</code> 等待页面稳定。然后在 <code>page.evaluate</code> 内部获取 <code>iframe.contentDocument</code>，遍历 <code>.post-feed-item</code> 节点，提取每个视频的<strong>标题、时间、封面URL</strong>，以及通过 <code>.data-item</code> 数组提取<strong>播放量、点赞、评论数、分享数、转发数</strong>等统计指标。
+                    </div>
+                    <div class="code-block">
+                        <div class="code-block-header">
+                            <div class="code-block-dots"><span></span><span></span><span></span></div>
+                            <span class="code-block-lang">TypeScript — page.evaluate 内部</span>
+                        </div>
+                        <pre><code><span class="cm">// 跳转到视频管理列表页</span>
+<span class="kw">await</span> page.<span class="fn">goto</span>(<span class="str">'https://channels.weixin.qq.com/platform/post/list?tab=post'</span>, { <span class="prop">settleMs</span>: <span class="num">5000</span> });
+<span class="kw">await new</span> <span class="type">Promise</span>(<span class="prop">r</span> => <span class="fn">setTimeout</span>(<span class="prop">r</span>, <span class="num">4000</span>)); <span class="cm">// 强制等待 React 异步渲染完成</span>
+
+<span class="kw">const</span> videosStats = <span class="kw">await</span> page.<span class="fn">evaluate</span>(<span class="str">`(async () => {
+  const iframe = document.querySelector("iframe");
+  const doc = iframe.contentDocument;
+  const videoEls = Array.from(doc.querySelectorAll(".post-feed-item"));
+  const results = [];
+
+  for (let i = 0; i &lt; limit; i++) {
+    const item = videoEls[i];
+    const dataItems = Array.from(item.querySelectorAll(".data-item"));
+    results.push({
+      title: item.querySelector(".post-title")?.innerText,
+      time: item.querySelector(".post-time")?.innerText,
+      cover: item.querySelector("img.thumb")?.src,
+      views: dataItems[0]?.querySelector(".count")?.innerText,
+      likes: dataItems[1]?.querySelector(".count")?.innerText,
+      comments_count: dataItems[2]?.querySelector(".count")?.innerText,
+      shares: dataItems[3]?.querySelector(".count")?.innerText,
+      thumbs: dataItems[4]?.querySelector(".count")?.innerText
+    });
+  }
+  return { data: results };
+})()`</span>);</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step-explain">
+                <div class="step-number" style="background: rgba(168, 85, 247, 0.1); border: 2px solid var(--accent-purple); color: var(--accent-purple);">3</div>
+                <div class="step-content">
+                    <div class="step-content-header">
+                        <h3>模拟点击抓取评论详情与头像</h3>
+                        <span class="step-tag" style="background: rgba(168, 85, 247, 0.1); color: var(--accent-purple);">跨页面</span>
+                    </div>
+                    <div class="step-desc">
+                        跳转到评论管理页后，由于右侧评论区是<strong>动态刷新</strong>的，必须通过代码模拟真实用户的鼠标点击左侧视频列表项。每次点击后等待 <strong>2000ms</strong> 让接口返回评论数据并完成渲染，然后提取每条评论的<strong>用户名、时间、头像URL、评论内容</strong>。特别处理了纯表情包评论（<code>img.alt</code> 兜底）。
+                    </div>
+                    <div class="code-block">
+                        <div class="code-block-header">
+                            <div class="code-block-dots"><span></span><span></span><span></span></div>
+                            <span class="code-block-lang">TypeScript — 评论抓取逻辑</span>
+                        </div>
+                        <pre><code><span class="cm">// 跳转到评论管理页面</span>
+<span class="kw">await</span> page.<span class="fn">goto</span>(<span class="str">'https://channels.weixin.qq.com/platform/interaction/comment'</span>, { <span class="prop">settleMs</span>: <span class="num">5000</span> });
+<span class="kw">await new</span> <span class="type">Promise</span>(<span class="prop">r</span> => <span class="fn">setTimeout</span>(<span class="prop">r</span>, <span class="num">4000</span>));
+
+<span class="kw">const</span> commentsData = <span class="kw">await</span> page.<span class="fn">evaluate</span>(<span class="str">`(async () => {
+  const doc = document.querySelector("iframe").contentDocument;
+  const videoEls = Array.from(doc.querySelectorAll(".comment-feed-wrap"));
+
+  for (let i = 0; i &lt; limit; i++) {
+    videoEls[i].click();  // 模拟人工点击左侧视频列表
+    await new Promise(r => setTimeout(r, 2000)); // 等待接口返回
+
+    const commentEls = Array.from(doc.querySelectorAll(".comment-item"));
+    const comments = commentEls.map(el => {
+      let content = el.querySelector(".comment-content")?.innerText || "";
+      if (!content.trim()) content = el.querySelector(".comment-content img")?.alt || "[图片]";
+      return {
+        user: el.querySelector(".comment-user-name")?.innerText,
+        time: el.querySelector(".comment-time")?.innerText,
+        avatar: el.querySelector("img.comment-avatar")?.src,
+        content: content.trim()
+      };
+    });
+  }
+})()`</span>);</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="step-explain">
+                <div class="step-number" style="background: rgba(251, 146, 60, 0.1); border: 2px solid var(--accent-orange); color: var(--accent-orange);">4</div>
+                <div class="step-content">
+                    <div class="step-content-header">
+                        <h3>数据合并与 MySQL 持久化入库</h3>
+                        <span class="step-tag" style="background: rgba(251, 146, 60, 0.1); color: var(--accent-orange);">持久化</span>
+                    </div>
+                    <div class="step-desc">
+                        在 Node.js 环境中通过视频 <code>title</code> 将两步抓取的数据进行<strong>合并映射</strong>。利用 <code>mysql2</code> 库连接数据库，创建 <code>video_stats</code> 和 <code>video_comments</code> 两张表。插入视频数据时使用 <code>ON DUPLICATE KEY UPDATE</code> 实现<strong>增量更新</strong>；插入评论前先 <code>DELETE</code> 清理旧评论再批量插入。数据库和所有字段均强制使用 <code>utf8mb4</code> 字符集以支持 Emoji。
+                    </div>
+                    <div class="code-block">
+                        <div class="code-block-header">
+                            <div class="code-block-dots"><span></span><span></span><span></span></div>
+                            <span class="code-block-lang">TypeScript — 数据库操作</span>
+                        </div>
+                        <pre><code><span class="cm">// 合并数据：将视频统计与其评论列表关联</span>
+<span class="kw">const</span> finalResults = statsList.<span class="fn">map</span>((<span class="prop">stat</span>) => {
+  <span class="kw">const</span> matched = commentsList.<span class="fn">find</span>((<span class="prop">c</span>) => c.title === stat.title);
+  <span class="kw">return</span> { ...stat, <span class="prop">comments_list</span>: matched ? matched.comments : [] };
+});
+
+<span class="cm">// 连接数据库（强制 utf8mb4 支持 Emoji）</span>
+<span class="kw">const</span> connection = <span class="kw">await</span> mysql.<span class="fn">createConnection</span>({
+  <span class="prop">host</span>: <span class="str">'10.1.28.16'</span>, <span class="prop">port</span>: <span class="num">3306</span>,
+  <span class="prop">user</span>: <span class="str">'root'</span>, <span class="prop">password</span>: <span class="str">'root'</span>,
+  <span class="prop">charset</span>: <span class="str">'utf8mb4'</span>
+});
+
+<span class="cm">// 增量更新视频数据</span>
+<span class="kw">await</span> connection.<span class="fn">query</span>(<span class="str">`
+  INSERT INTO video_stats (title, time, views, likes, comments_count, shares, thumbs, cover)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  ON DUPLICATE KEY UPDATE
+    views = VALUES(views), likes = VALUES(likes), ...
+`</span>, [safeTitle, result.time, ...]);
+
+<span class="cm">// 清理旧评论并批量插入最新评论</span>
+<span class="kw">await</span> connection.<span class="fn">query</span>(<span class="str">'DELETE FROM video_comments WHERE video_id = ?'</span>, [videoId]);
+<span class="kw">await</span> connection.<span class="fn">query</span>(<span class="str">`INSERT INTO video_comments (video_id, user, time, content, avatar) VALUES ?`</span>, [commentValues]);</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== CODE: channels-auto_reply.ts ===== -->
+    <section class="section" id="code-reply">
+        <div class="code-section fade-in">
+            <div class="code-section-header">
+                <div class="code-section-icon" style="background: rgba(244, 114, 182, 0.1); border: 1px solid rgba(244, 114, 182, 0.3);">🤖</div>
+                <div>
+                    <h2>基于关键字的自动回复脚本</h2>
+                    <div class="file-tag">channels-auto_reply.ts — 破解 React/Vue SPA 三大"幽灵锁"</div>
+                </div>
+            </div>
+
+            <!-- Step 1 -->
+            <div class="step-explain">
+                <div class="step-number" style="background: rgba(244, 114, 182, 0.1); border: 2px solid var(--accent-pink); color: var(--accent-pink);">1</div>
+                <div class="step-content">
+                    <div class="step-content-header">
+                        <h3>命令注册与页面导航</h3>
+                        <span class="step-tag" style="background: rgba(244, 114, 182, 0.1); color: var(--accent-pink);">入口</span>
+                    </div>
+                    <div class="step-desc">
+                        注册 <code>channels auto_reply</code> 命令，同样使用 <code>Strategy.UI</code> 策略。脚本首先跳转到评论管理页面 <code>/platform/interaction/comment</code>，等待页面完全加载后，进入 <code>page.evaluate</code> 开始遍历左侧视频列表，逐个点击加载右侧评论区。
+                    </div>
+                    <div class="code-block">
+                        <div class="code-block-header">
+                            <div class="code-block-dots"><span></span><span></span><span></span></div>
+                            <span class="code-block-lang">TypeScript</span>
+                        </div>
+                        <pre><code><span class="kw">export const</span> <span class="fn">autoReplyCommand</span> = <span class="fn">cli</span>({
+  <span class="prop">site</span>: <span class="str">'channels'</span>,
+  <span class="prop">name</span>: <span class="str">'auto_reply'</span>,
+  <span class="prop">description</span>: <span class="str">'自动遍历视频号评论，发现包含"意思"的评论自动回复'</span>,
+  <span class="prop">domain</span>: <span class="str">'channels.weixin.qq.com'</span>,
+  <span class="prop">strategy</span>: Strategy.<span class="type">UI</span>,
+  <span class="prop">browser</span>: <span class="kw">true</span>,
+  <span class="prop">args</span>: [{ <span class="prop">name</span>: <span class="str">'limit'</span>, <span class="prop">type</span>: <span class="str">'int'</span>, <span class="prop">default</span>: <span class="num">20</span> }],
+  <span class="prop">columns</span>: [<span class="str">'video_title'</span>, <span class="str">'user'</span>, <span class="str">'comment'</span>, <span class="str">'status'</span>],
+  <span class="prop">func</span>: <span class="kw">async</span> (<span class="prop">page</span>, <span class="prop">kwargs</span>) => {
+    <span class="cm">// 跳转到互动管理页面</span>
+    <span class="kw">await</span> page.<span class="fn">goto</span>(<span class="str">'https://channels.weixin.qq.com/platform/interaction/comment'</span>, { <span class="prop">settleMs</span>: <span class="num">5000</span> });
+    <span class="kw">await new</span> <span class="type">Promise</span>(<span class="prop">r</span> => <span class="fn">setTimeout</span>(<span class="prop">r</span>, <span class="num">4000</span>));
+    <span class="cm">// ... 进入 page.evaluate 遍历评论</span>
+  },
+});</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step-explain">
+                <div class="step-number" style="background: rgba(250, 204, 21, 0.1); border: 2px solid var(--accent-yellow); color: var(--accent-yellow);">2</div>
+                <div class="step-content">
+                    <div class="step-content-header">
+                        <h3>破解"幽灵锁"：点击失效 → scrollIntoView + dispatchEvent</h3>
+                        <span class="step-tag" style="background: rgba(250, 204, 21, 0.1); color: var(--accent-yellow);">破局 ①</span>
+                    </div>
+                    <div class="step-desc">
+                        <strong>问题</strong>：微信评论区采用 React/Vue 虚拟 DOM，直接对包裹元素调用 <code>.click()</code> 经常因冒泡问题或元素不在视口内而被"吃掉"。<br>
+                        <strong>破局</strong>：先调用 <code>scrollIntoView()</code> 强行滚动到视口中心，再使用 <code>dispatchEvent(new MouseEvent('click', { bubbles: true }))</code> 向底层 SVG 气泡图标派发最真实的鼠标事件，并加上 <code>.click()</code> 双重保险。
+                    </div>
+                    <div class="code-block">
+                        <div class="code-block-header">
+                            <div class="code-block-dots"><span></span><span></span><span></span></div>
+                            <span class="code-block-lang">TypeScript — 破解点击失效</span>
+                        </div>
+                        <pre><code><span class="cm">// 找到回复按钮（SVG 图标）</span>
+<span class="kw">const</span> replyBtn = el.<span class="fn">querySelector</span>(<span class="str">".weui-icon-outlined-comment"</span>);
+<span class="kw">if</span> (replyBtn) {
+  <span class="cm">// 1. 确保元素在视口中心可见</span>
+  replyBtn.<span class="fn">scrollIntoView</span>({ <span class="prop">behavior</span>: <span class="str">'smooth'</span>, <span class="prop">block</span>: <span class="str">'center'</span> });
+  <span class="kw">await</span> <span class="fn">wait</span>(<span class="num">500</span>);
+
+  <span class="cm">// 2. 派发最真实的 MouseEvent（含 bubbles + view 上下文）</span>
+  replyBtn.<span class="fn">dispatchEvent</span>(<span class="kw">new</span> <span class="type">MouseEvent</span>(<span class="str">'click'</span>, {
+    <span class="prop">bubbles</span>: <span class="kw">true</span>,
+    <span class="prop">cancelable</span>: <span class="kw">true</span>,
+    <span class="prop">view</span>: iframe.contentWindow  <span class="cm">// 关键：指定 iframe 上下文</span>
+  }));
+  replyBtn.<span class="fn">click</span>(); <span class="cm">// 双重保险</span>
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step-explain">
+                <div class="step-number" style="background: rgba(0, 240, 255, 0.1); border: 2px solid var(--accent-cyan); color: var(--accent-cyan);">3</div>
+                <div class="step-content">
+                    <div class="step-content-header">
+                        <h3>破解"幽灵锁"：发送按钮置灰 → 原型链 Setter 注入 + input 事件</h3>
+                        <span class="step-tag" style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan);">破局 ②</span>
+                    </div>
+                    <div class="step-desc">
+                        <strong>问题</strong>：即使成功弹出回复框，直接修改 <code>textarea.value</code> 不会触发 React 的 <code>onChange</code>，导致"发送"按钮仍处于 Disabled 状态。<br>
+                        <strong>破局</strong>：使用 JavaScript 原型链获取 <code>HTMLTextAreaElement.prototype</code> 的原生 <code>value</code> Setter，通过 <code>.call()</code> 注入值，然后立刻派发 <code>input</code> 事件，完美骗过 React 状态树。
+                    </div>
+                    <div class="code-block">
+                        <div class="code-block-header">
+                            <div class="code-block-dots"><span></span><span></span><span></span></div>
+                            <span class="code-block-lang">TypeScript — 突破 React 状态锁</span>
+                        </div>
+                        <pre><code><span class="kw">const</span> textarea = el.<span class="fn">querySelector</span>(<span class="str">"textarea"</span>);
+<span class="kw">if</span> (textarea) {
+  <span class="cm">// 获取 iframe 上下文中的原生 Setter（不是主窗口的！）</span>
+  <span class="kw">const</span> iframeWindow = iframe.contentWindow;
+  <span class="kw">const</span> nativeInputValueSetter = iframeWindow
+    ? <span class="type">Object</span>.<span class="fn">getOwnPropertyDescriptor</span>(
+        iframeWindow.<span class="type">HTMLTextAreaElement</span>.prototype, <span class="str">"value"</span>
+      )?.set
+    : <span class="kw">null</span>;
+
+  <span class="kw">if</span> (nativeInputValueSetter) {
+    <span class="cm">// 通过原型链的 Setter 强制写入</span>
+    nativeInputValueSetter.<span class="fn">call</span>(textarea, <span class="str">"欢迎观看这个视频谢谢"</span>);
+  } <span class="kw">else</span> {
+    textarea.value = <span class="str">"欢迎观看这个视频谢谢"</span>;
+  }
+
+  <span class="cm">// 派发 input 事件，骗过 React 状态树，点亮"发送"按钮</span>
+  textarea.<span class="fn">dispatchEvent</span>(<span class="kw">new</span> <span class="type">Event</span>(<span class="str">"input"</span>, { <span class="prop">bubbles</span>: <span class="kw">true</span> }));
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="step-explain">
+                <div class="step-number" style="background: rgba(0, 255, 136, 0.1); border: 2px solid var(--accent-green); color: var(--accent-green);">4</div>
+                <div class="step-content">
+                    <div class="step-content-header">
+                        <h3>破解"幽灵锁"：跨 iframe 原型丢失 → 精准获取 iframe 上下文</h3>
+                        <span class="step-tag" style="background: rgba(0, 255, 136, 0.1); color: var(--accent-green);">破局 ③</span>
+                    </div>
+                    <div class="step-desc">
+                        <strong>问题</strong>：即使使用 <code>window.HTMLTextAreaElement.prototype</code> 也无效，因为微信评论区嵌套在 <code>iframe</code> 中，主窗口和 iframe 的原型链是隔离的。<br>
+                        <strong>破局</strong>：精准获取 <code>iframe.contentWindow.HTMLTextAreaElement.prototype</code>，拿到属于该 iframe 上下文的底层 Setter。最后定位包含 <code>primary</code> 类名的发送按钮，确认非 <code>disabled</code> 状态后点击发送，并记录完整的操作日志。
+                    </div>
+                    <div class="code-block">
+                        <div class="code-block-header">
+                            <div class="code-block-dots"><span></span><span></span><span></span></div>
+                            <span class="code-block-lang">TypeScript — 跨 iframe 原型 + 发送</span>
+                        </div>
+                        <pre><code><span class="cm">// 关键：必须从 iframe.contentWindow 获取原型，而非主窗口 window</span>
+<span class="kw">const</span> iframeWindow = iframe.contentWindow;
+<span class="kw">const</span> nativeSetter = <span class="type">Object</span>.<span class="fn">getOwnPropertyDescriptor</span>(
+  iframeWindow.<span class="type">HTMLTextAreaElement</span>.prototype, <span class="str">"value"</span>
+)?.set;
+
+<span class="cm">// ... 注入值并派发 input 事件后 ...</span>
+<span class="kw">await</span> <span class="fn">wait</span>(<span class="num">800</span>);
+
+<span class="cm">// 定位"发送"按钮（包含 primary 类的 .tag-wrap）</span>
+<span class="kw">const</span> submitBtn = <span class="type">Array</span>.<span class="fn">from</span>(el.<span class="fn">querySelectorAll</span>(<span class="str">".tag-wrap"</span>))
+  .<span class="fn">find</span>(<span class="prop">b</span> => b.className.<span class="fn">includes</span>(<span class="str">"primary"</span>));
+
+<span class="kw">if</span> (submitBtn && !submitBtn.className.<span class="fn">includes</span>(<span class="str">"disabled"</span>)) {
+  submitBtn.<span class="fn">click</span>();
+  actionLogs.<span class="fn">push</span>({
+    <span class="prop">video_title</span>: videoTitle, <span class="prop">user</span>, <span class="prop">comment</span>: content,
+    <span class="prop">status</span>: <span class="str">'✅ 已回复'</span>
+  });
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== PITFALLS ===== -->
+    <section class="section" id="pitfalls">
+        <div class="section-header fade-in">
+            <div class="section-tag">Pitfalls</div>
+            <h2 class="section-title">踩坑记录</h2>
+            <div class="glow-line"></div>
+            <p class="section-desc">实战过程中遇到的两大核心问题及其解决方案</p>
+        </div>
+
+        <div class="fade-in">
+            <div class="pitfall-card">
+                <div class="pitfall-icon">⏳</div>
+                <div class="pitfall-content">
+                    <h3>坑 1：现代 SPA 页面的异步渲染延迟</h3>
+                    <p>脚本执行太快，经常报"未找到视频列表"的错误。微信后台使用 React 框架，DOM 节点通过异步接口返回后才挂载，单纯依赖 <code>page.goto</code> 的完成状态完全不够。</p>
+                    <div class="solution">
+                        <strong>✅ 解决方案：</strong>大幅延长硬等待时间 — <code>settleMs: 5000</code>（导航等待）+ <code>setTimeout(4000)</code>（渲染等待）+ 每次点击视频后 <code>setTimeout(2000)</code>（接口返回等待），给足 iframe 充足的网络请求和 DOM 挂载时间。
+                    </div>
+                </div>
+            </div>
+
+            <div class="pitfall-card">
+                <div class="pitfall-icon">💥</div>
+                <div class="pitfall-content">
+                    <h3>坑 2：数据库写入时的 Emoji 字符崩溃</h3>
+                    <p>用户微信昵称或评论中经常包含原生手机 Emoji（如 🍟、🍫 等四字节 Unicode 字符），写入 MySQL 时直接报 <code>TypeError: Unknown charset 'utf8mb3'</code> 或截断乱码。</p>
+                    <div class="solution">
+                        <strong>✅ 解决方案：</strong>① <code>mysql2</code> 连接 <code>charset</code> 严格指定为 <code>'utf8mb4'</code>；② 建表时所有字段强制 <code>CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci</code>；③ 使用 <code>ALTER DATABASE</code> 强制覆盖老旧字符集；④ 代码中对标题和内容做 Emoji 清洗兜底。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== DEPLOYMENT ===== -->
+    <section class="section" id="deploy">
+        <div class="section-header fade-in">
+            <div class="section-tag">Deploy</div>
+            <h2 class="section-title">跨设备部署指南</h2>
+            <div class="glow-line"></div>
+            <p class="section-desc">通过 OpenCLI 轻松将方案迁移到任何电脑上运行</p>
+        </div>
+
+        <div class="deploy-steps fade-in">
+            <div class="deploy-step">
+                <div class="deploy-step-num">1</div>
+                <div class="deploy-step-content">
+                    <h4>全局安装 OpenCLI</h4>
+                    <p>在目标电脑上安装 OpenCLI CLI 框架</p>
+                    <code>npm install -g @jackwener/opencli</code>
+                </div>
+            </div>
+            <div class="deploy-step">
+                <div class="deploy-step-num">2</div>
+                <div class="deploy-step-content">
+                    <h4>安装数据库驱动</h4>
+                    <p>脚本引入了 mysql2，需要在 OpenCLI 目录下安装</p>
+                    <code>cd ~/.opencli && npm install mysql2</code>
+                </div>
+            </div>
+            <div class="deploy-step">
+                <div class="deploy-step-num">3</div>
+                <div class="deploy-step-content">
+                    <h4>注册脚本命令</h4>
+                    <p>将 TypeScript 源码文件复制到新电脑并注册</p>
+                    <code>opencli register /路径/到/你的/channels-stats.ts</code>
+                </div>
+            </div>
+            <div class="deploy-step">
+                <div class="deploy-step-num">4</div>
+                <div class="deploy-step-content">
+                    <h4>安装 Chrome 扩展并登录</h4>
+                    <p>安装 opencli Browser Bridge 插件，在 Chrome 中扫码登录视频号后台</p>
+                    <code>opencli setup</code>
+                </div>
+            </div>
+            <div class="deploy-step">
+                <div class="deploy-step-num">▶</div>
+                <div class="deploy-step-content">
+                    <h4>执行抓取 / 自动回复</h4>
+                    <p>在终端任意目录下执行以下命令即可</p>
+                    <code>opencli channels stats --limit 20<br>opencli channels auto_reply --limit 20</code>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+    <p>OpenCLI × Trae 协同开发实战 — 微信视频号数据抓取与持久化指南</p>
+    <p style="margin-top: 0.5rem;">
+        <a href="https://github.com/jackwener/opencli" target="_blank">GitHub</a> ·
+        <a href="https://opencli.info" target="_blank">opencli.info</a> ·
+        Built with ❤️ and AI
+    </p>
+</footer>
+
+<script>
+// ===== Particle Background =====
+(function() {
+    const container = document.getElementById('particles');
+    const count = 50;
+    for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDuration = (Math.random() * 15 + 10) + 's';
+        p.style.animationDelay = (Math.random() * 10) + 's';
+        p.style.width = p.style.height = (Math.random() * 3 + 1) + 'px';
+        const colors = ['#00f0ff', '#00ff88', '#a855f7', '#f472b6'];
+        p.style.background = colors[Math.floor(Math.random() * colors.length)];
+        container.appendChild(p);
+    }
+})();
+
+// ===== Scroll Fade-in Animation =====
+(function() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+})();
+
+// ===== Smooth scroll for nav links =====
+document.querySelectorAll('.nav-links a').forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+});
+</script>
+
+</body>
+</html>
